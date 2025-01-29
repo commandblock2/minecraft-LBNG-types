@@ -1,5 +1,3 @@
-// Import required Java classes
-
 // type: array
 /** @type any[]*/
 var globalEntries = Object.entries(this);
@@ -145,7 +143,7 @@ ${globalEntries
                         .filter((entry) => entry[1] != undefined)
                         .filter((entry) => entry[1] instanceof Class)
                         .map(
-                            (entry) => `   export type ${entry[0]} = ${getName(entry[1])}_;`
+                            (entry) => `    export type ${entry[0]} = ${getName(entry[1])}_;`
                         )
                         .join("\n\n")}
 
