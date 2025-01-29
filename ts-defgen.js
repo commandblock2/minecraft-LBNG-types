@@ -46,8 +46,8 @@ function loadClassFromJar(classLoader, className) {
 }
 
 function getName(javaClass) {
-    const fullName = javaClass.name
-    return fullName.substring(fullName.lastIndexOf('.') + 1)
+    const fullName = javaClass.name;
+    return fullName.substring(fullName.lastIndexOf(".") + 1);
 }
 
 const script = registerScript({
@@ -64,8 +64,7 @@ script.registerModule(
         settings: {
             path: Setting.text({
                 name: "Path",
-                default:
-                    "",
+                default: "",
             }),
             packageName: Setting.text({
                 name: "NPMPackageName",
@@ -98,11 +97,13 @@ script.registerModule(
                 .map((entry) => (entry[1] instanceof Class ? entry[1] : entry[1].class))
                 .filter((entry) => entry != undefined);
 
-            const kotlinClasses = (javaClasses.concat([
-                Java.type("net.ccbluex.liquidbounce.script.bindings.features.ScriptModule")
-            ])).map((entry) =>
-                JvmClassMappingKt.getKotlinClass(entry)
-            );
+            const kotlinClasses = javaClasses
+                .concat([
+                    Java.type(
+                        "net.ccbluex.liquidbounce.script.bindings.features.ScriptModule"
+                    ),
+                ])
+                .map((entry) => JvmClassMappingKt.getKotlinClass(entry));
 
             const classes = new ArrayList(kotlinClasses);
 
@@ -121,10 +122,13 @@ script.registerModule(
                 );
 
                 const embeddedDefinition = `
+
+declare module "@embedded" {
 // imports
 ${javaClasses
                         .map((clazz) => {
-                            return `import { ${getName(clazz)}_ } from "@${mod.settings.packageName.value}/types/${clazz.name.replaceAll(".", "/")}";`;
+                            return `import { ${getName(clazz)}_ } from "@${mod.settings.packageName.value
+                                }/types/${clazz.name.replaceAll(".", "/")}";`;
                         })
                         .join("\n")}
 
@@ -134,18 +138,58 @@ ${globalEntries
                         .filter((entry) => entry[1] != undefined)
                         .filter((entry) => !(entry[1] instanceof Class))
                         .filter((entry) => entry[1].class != undefined)
-                        .map((entry) => `export const ${entry[0]}: ${getName(entry[1].class)}_;`)
+                        .map((entry) => `   export const ${entry[0]}: ${getName(entry[1].class)}_;`)
                         .join("\n\n")}
 
-${
-    globalEntries.filter((entry) => entry[1] != undefined)
-    .filter((entry) => (entry[1] instanceof Class))
-    .map((entry) => `export type ${getName(entry[1])} = ${getName(entry[1])}_;`)
-    .join("\n\n")
+${globalEntries
+                        .filter((entry) => entry[1] != undefined)
+                        .filter((entry) => entry[1] instanceof Class)
+                        .map(
+                            (entry) => `   export type ${entry[0]} = ${getName(entry[1])}_;`
+                        )
+                        .join("\n\n")}
+
 }
 
 `;
+
+                const templateFile = `
+// imports
+import {
+${
+globalEntries
+.filter((entry) => entry[1] != undefined)
+.filter((entry) => entry[1] instanceof Class || entry[1].class != undefined)
+.map((entry) => `   ${entry[0]}`)
+.join(",\n")}
+} from "@embedded";
+
+import { ScriptModule } from "@${mod.settings.packageName.value}/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule";
+
+const script = registerScript.apply({
+    
+});
+
+script.registerModule({
+    // @ts-ignore   
+    name: "example",
+    // @ts-ignore   
+    description: "Ths is an example module generated in ts",
+    // @ts-ignore   
+    version: 1,
+    // @ts-ignore   
+    author: "commandblock2"
+
+}, (mod: ScriptModule) => {
+    mod.on("enable", () => console.log("enabled"))
+    mod.on("disable", () => console.log("disabled"))
+})
+
+`;
+
                 console.log(embeddedDefinition)
+                console.log(templateFile)
+                
             } catch (e) {
                 e.printStackTrace();
                 console.error(e);
