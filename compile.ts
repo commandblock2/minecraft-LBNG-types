@@ -4,122 +4,122 @@ import * as path from 'path';
 
 // The custom require function to prepend to files
 const requireFunction = `
+
 function __require(path) {
-    if (path.startsWith("@embedded") || path.startsWith("@minecraft-yarn-definitions")) {
-        const javaPath = path
-            .replace("@embedded", "net.ccbluex.liquidbounce.script.api")
-            .replace("@minecraft-yarn-definitions", "net.minecraft");
-        return Java.type(javaPath);
+    if (path.startsWith("@embedded")) {
+        return {
+            _embedded: globalThis
+        }
+    }
+
+    if (path.startsWith("@minecraft-yarn-definitions/types/")) {
+        return Java.type(path
+            .replaceAll("@minecraft-yarn-definitions/types/", "")
+            .replaceAll("/", ".")
+        )
     }
     return require(path);
-}\n\n`;
+}
+
+var exports = {}
+
+`;
 
 
 function createTransformer(): ts.TransformerFactory<ts.SourceFile> {
     return (context: ts.TransformationContext): ts.Transformer<ts.SourceFile> => {
-        return (sourceFile: ts.SourceFile): ts.SourceFile => {
-            const visitor = (node: ts.Node): ts.Node => {
-                // Handle require calls
-                if (ts.isCallExpression(node) && 
-                    ts.isIdentifier(node.expression) && 
-                    node.expression.text === 'require') {
-                    return ts.factory.createCallExpression(
-                        ts.factory.createIdentifier('__require'),
-                        node.typeArguments,
-                        node.arguments
-                    );
-                }
+        // Keep track of transformed identifiers
+        const transformedIdentifiers = new Map<string, string>();
+        
+        const createVisitor = (isSecondPass: boolean) => (node: ts.Node): ts.Node => {
+            // First pass: Handle require statements and record transformations
+            if (!isSecondPass && ts.isVariableStatement(node)) {
+                const declarations = node.declarationList.declarations;
                 
-                // Handle import declarations
-                if (ts.isImportDeclaration(node)) {
-                    const moduleSpecifier = (node.moduleSpecifier as ts.StringLiteral).text;
-                    const importClause = node.importClause;
-                    
-                    if (importClause && importClause.namedBindings) {
-                        if (ts.isNamedImports(importClause.namedBindings)) {
-                            // Create a simple variable declaration without namespace
-                            const elements = importClause.namedBindings.elements;
-                            return ts.factory.createVariableStatement(
-                                undefined,
-                                ts.factory.createVariableDeclarationList(
-                                    elements.map(e => 
-                                        ts.factory.createVariableDeclaration(
-                                            e.name, // Use the original name without suffix
-                                            undefined,
-                                            undefined,
-                                            ts.factory.createCallExpression(
-                                                ts.factory.createIdentifier('__require'),
-                                                undefined,
-                                                [ts.factory.createStringLiteral(moduleSpecifier)]
-                                            )
-                                        )
-                                    ),
-                                    ts.NodeFlags.Const
+                const newDeclarations = declarations.map(decl => {
+                    if (decl.initializer && 
+                        ts.isCallExpression(decl.initializer) &&
+                        ts.isIdentifier(decl.initializer.expression) &&
+                        decl.initializer.expression.text === 'require') {
+                        
+                        // Extract the module name and record the transformation
+                        const originalName = (decl.name as ts.Identifier).text;
+                        const moduleName = originalName.replace(/_(\d+)?$/, '');
+                        transformedIdentifiers.set(originalName, moduleName);
+                        
+                        return ts.factory.createVariableDeclaration(
+                            ts.factory.createObjectBindingPattern([
+                                ts.factory.createBindingElement(
+                                    undefined,
+                                    undefined,
+                                    ts.factory.createIdentifier(moduleName),
+                                    undefined
                                 )
-                            );
-                        } else if (ts.isNamespaceImport(importClause.namedBindings)) {
-                            // Handle namespace imports
-                            return ts.factory.createVariableStatement(
-                                undefined,
-                                ts.factory.createVariableDeclarationList(
-                                    [ts.factory.createVariableDeclaration(
-                                        importClause.namedBindings.name,
-                                        undefined,
-                                        undefined,
-                                        ts.factory.createCallExpression(
-                                            ts.factory.createIdentifier('__require'),
-                                            undefined,
-                                            [ts.factory.createStringLiteral(moduleSpecifier)]
-                                        )
-                                    )],
-                                    ts.NodeFlags.Const
-                                )
-                            );
-                        }
-                    } else if (importClause?.name) {
-                        // Handle default imports
-                        return ts.factory.createVariableStatement(
+                            ]),
                             undefined,
-                            ts.factory.createVariableDeclarationList(
-                                [ts.factory.createVariableDeclaration(
-                                    importClause.name,
-                                    undefined,
-                                    undefined,
-                                    ts.factory.createCallExpression(
-                                        ts.factory.createIdentifier('__require'),
-                                        undefined,
-                                        [ts.factory.createStringLiteral(moduleSpecifier)]
-                                    )
-                                )],
-                                ts.NodeFlags.Const
+                            undefined,
+                            ts.factory.createCallExpression(
+                                ts.factory.createIdentifier('__require'),
+                                undefined,
+                                decl.initializer.arguments
                             )
                         );
                     }
-                }
+                    return decl;
+                });
 
-                // Handle property access expressions (remove namespace access)
-                if (ts.isPropertyAccessExpression(node) &&
-                    ts.isIdentifier(node.expression) &&
-                    node.expression.text.match(/.*_\d+$/)) {  // Match any _number suffix
-                    return node.name;
-                }
-
-                // Handle variable declarations to remove _1 suffix
-                if (ts.isVariableDeclaration(node) &&
-                    ts.isIdentifier(node.name) &&
-                    node.name.text.match(/.*_\d+$/)) {
-                    return ts.factory.createVariableDeclaration(
-                        ts.factory.createIdentifier(node.name.text.replace(/_\d+$/, '')),
-                        node.exclamationToken,
-                        node.type,
-                        node.initializer
-                    );
+                return ts.factory.createVariableStatement(
+                    undefined,
+                    ts.factory.createVariableDeclarationList(
+                        newDeclarations,
+                        ts.NodeFlags.Const
+                    )
+                );
+            }
+            
+            // Second pass: Clean up transformed references
+            if (isSecondPass) {
+                // Handle property access like _embedded_1.registerScript
+                if (ts.isPropertyAccessExpression(node)) {
+                    const expression = node.expression;
+                    if (ts.isIdentifier(expression)) {
+                        const transformedName = transformedIdentifiers.get(expression.text);
+                        if (transformedName) {
+                            return ts.factory.createPropertyAccessExpression(
+                                ts.factory.createIdentifier(transformedName),
+                                node.name
+                            );
+                        }
+                    }
                 }
                 
-                return ts.visitEachChild(node, visitor, context);
-            };
+                // Handle new expressions like new ScriptModule_1.ScriptModule
+                if (ts.isNewExpression(node)) {
+                    if (ts.isPropertyAccessExpression(node.expression)) {
+                        const expression = node.expression.expression;
+                        if (ts.isIdentifier(expression)) {
+                            const transformedName = transformedIdentifiers.get(expression.text);
+                            if (transformedName) {
+                                return ts.factory.createNewExpression(
+                                    ts.factory.createIdentifier(node.expression.name.text),
+                                    node.typeArguments,
+                                    node.arguments
+                                );
+                            }
+                        }
+                    }
+                }
+            }
             
-            return ts.visitNode(sourceFile, visitor) as ts.SourceFile;
+            return ts.visitEachChild(node, createVisitor(isSecondPass), context);
+        };
+        
+        return (sourceFile: ts.SourceFile): ts.SourceFile => {
+            // First pass: Transform requires and record changes
+            let result = ts.visitNode(sourceFile, createVisitor(false)) as ts.SourceFile;
+            // Second pass: Clean up references
+            result = ts.visitNode(result, createVisitor(true)) as ts.SourceFile;
+            return result;
         };
     };
 }

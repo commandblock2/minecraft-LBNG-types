@@ -174,9 +174,7 @@ script.registerModule({
     // @ts-ignore   
     description: "Ths is an example module generated in ts",
     // @ts-ignore   
-    version: 1,
-    // @ts-ignore   
-    author: "commandblock2"
+    category: "Client"
 
 }, (mod: ScriptModule) => {
     mod.on("enable", () => console.log("enabled"))
