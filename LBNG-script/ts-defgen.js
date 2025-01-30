@@ -125,7 +125,7 @@ declare module "@embedded" {
 // imports
 ${javaClasses
                         .map((clazz) => {
-                            return `import { ${getName(clazz)}_ } from "@${mod.settings.packageName.value
+                            return `import { ${getName(clazz)} } from "@${mod.settings.packageName.value
                                 }/types/${clazz.name.replaceAll(".", "/")}";`;
                         })
                         .join("\n")}
@@ -136,14 +136,14 @@ ${globalEntries
                         .filter((entry) => entry[1] != undefined)
                         .filter((entry) => !(entry[1] instanceof Class))
                         .filter((entry) => entry[1].class != undefined)
-                        .map((entry) => `   export const ${entry[0]}: ${getName(entry[1].class)}_;`)
+                        .map((entry) => `   export const ${entry[0]}: ${getName(entry[1].class)};`)
                         .join("\n\n")}
 
 ${globalEntries
                         .filter((entry) => entry[1] != undefined)
                         .filter((entry) => entry[1] instanceof Class)
                         .map(
-                            (entry) => `    export type ${entry[0]} = ${getName(entry[1])}_;`
+                            (entry) => `    export { ${entry[0]} };`
                         )
                         .join("\n\n")}
 
