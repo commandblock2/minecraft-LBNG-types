@@ -162,7 +162,7 @@ globalEntries
 .join(",\n")}
 } from "@embedded";
 
-import { Vec2f } from "@${mod.settings.packageName.value}/types/net/minecraft/util/math/Vec2f";
+import { Matrix2d } from "@minecraft-yarn-definitions/types/org/joml/Matrix2d";
 import { ScriptModule } from "@${mod.settings.packageName.value}/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule";
 
 const script = registerScript.apply({
@@ -179,10 +179,10 @@ script.registerModule({
 
 }, (mod: ScriptModule) => {
     mod.on("enable", () => {
-        console.log(mc.player)
-        console.log(new Vec3i(1, 2, 3))
-        console.log(new Vec2f(2.1, 2.2))
-        console.log("enabled")
+        Client.displayChatMessage(\`${mc.player}\`)
+        Client.displayChatMessage(\`${new Vec3i(1, 2, 3)}\`)
+        Client.displayChatMessage(\`${new Matrix2d(1.2, 1.3, 1.4, 15)}\`)
+        Client.displayChatMessage(\"enabled")
     })
     mod.on("disable", () => console.log("disabled"))
 })

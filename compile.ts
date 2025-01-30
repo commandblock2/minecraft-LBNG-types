@@ -13,14 +13,15 @@ function __require(path) {
     }
 
     if (path.startsWith("@minecraft-yarn-definitions/types/")) {
-        return Java.type(path
-            .replaceAll("@minecraft-yarn-definitions/types/", "")
-            .replaceAll("/", ".")
-        )
+        return {
+            [path.substring(path.lastIndexOf("/") + 1)]: Java.type(path
+                .replaceAll("@minecraft-yarn-definitions/types/", "")
+                .replaceAll("/", ".")
+            )
+        }
     }
     return require(path);
 }
-
 var exports = {}
 
 `;
