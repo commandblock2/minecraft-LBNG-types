@@ -4,11 +4,11 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Debug TypeScript",
+            "name": "Compile script",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${file}",
+            "program": "${workspaceFolder}/compile.ts",
             "runtimeArgs": ["-r", "ts-node/register"],
             "sourceMaps": true
         }

@@ -120,7 +120,7 @@ script.registerModule(
                 );
 
                 const embeddedDefinition = `
-
+// embedded.ts
 declare module "@embedded" {
 // imports
 ${javaClasses
@@ -152,6 +152,7 @@ ${globalEntries
 `;
 
                 const templateFile = `
+// template.ts
 // imports
 import {
 ${
