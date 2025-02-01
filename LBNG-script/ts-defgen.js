@@ -180,9 +180,9 @@ script.registerModule({
 
 }, (mod: ScriptModule) => {
     mod.on("enable", () => {
-        Client.displayChatMessage(\`${mc.player}\`)
-        Client.displayChatMessage(\`${new Vec3i(1, 2, 3)}\`)
-        Client.displayChatMessage(\`${new Matrix2d(1.2, 1.3, 1.4, 15)}\`)
+        Client.displayChatMessage(\`\${mc.player}\`)
+        Client.displayChatMessage(\`\${new Vec3i(1, 2, 3)}\`)
+        Client.displayChatMessage(\`\${new Matrix2d(1.2, 1.3, 1.4, 15)}\`)
         Client.displayChatMessage(\"enabled")
     })
     mod.on("disable", () => console.log("disabled"))
@@ -190,12 +190,29 @@ script.registerModule({
 
 `;
 
+                const entries = ReflectionUtil.getDeclaredField(mod.class, "LOWERCASE_NAME_EVENT_MAP").entrySet().toArray();
+
+                const importsForScriptEventPatch = `
+// imports for
+${ entries.map((entry) => entry[1]).map((kClassImpl) => `import type { ${ kClassImpl.simpleName } } from '../../../../../../${ kClassImpl.qualifiedName.replaceAll(".", "/") }.d.ts`).join("\n") }
+
+
+`
+                const onEventsForScriptPatch = `
+// on events
+${ entries.map((entry) => `on(eventName: "${entry[0]}", handler: (${entry[0]}Event: ${ entry[1].simpleName }) => void): Unit;`).join("\n") }
+
+
+`
+
                 console.log(embeddedDefinition)
                 console.log(templateFile)
+                console.log(importsForScriptEventPatch)
+                console.log(onEventsForScriptPatch)
                 
             } catch (e) {
-                e.printStackTrace();
                 console.error(e);
+                e.printStackTrace();
                 throw e;
             }
 

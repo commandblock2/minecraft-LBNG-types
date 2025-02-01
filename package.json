@@ -9,5 +9,11 @@
     "@types/node": "^22.12.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3"
+  },
+  "scripts": {
+    "apply-patches": "npx ts-node scripts/apply-patches.ts patches generated-modules",
+    "generate-patches": "npx ts-node scripts/generate-patches.ts patches generated-modules",
+    "rebuild-patches": "npm run generate-patches && npm run apply-patches",
+    "compile": "npx ts-node scripts/compile.ts"
   }
 }
