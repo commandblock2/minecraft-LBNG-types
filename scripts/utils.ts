@@ -23,3 +23,21 @@ export async function validateDirs(patchDir: string, workDir: string) {
 
     return { absolutePatchDir, absoluteWorkDir }
 }
+
+
+export function sanitizeCommitMessage(message: string): string {
+    return message
+        .trim()
+        // Take first line of commit message
+        .split('\n')[0]
+        // Remove special characters and spaces
+        .replace(/[^a-zA-Z0-9-]/g, '-')
+        // Convert to lowercase
+        .toLowerCase()
+        // Remove consecutive dashes
+        .replace(/-+/g, '-')
+        // Trim dashes from start and end
+        .replace(/^-+|-+$/g, '')
+        // Limit length
+        .slice(0, 50);
+}
