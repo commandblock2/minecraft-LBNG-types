@@ -127,7 +127,17 @@ function createTransformer(): ts.TransformerFactory<ts.SourceFile> {
 
 
 function compile(fileNames: string[], options: ts.CompilerOptions): void {
-    const program = ts.createProgram(fileNames, options);
+
+    const sourceMapOptions: ts.CompilerOptions = {
+        ...options,
+        sourceMap: true,
+        inlineSourceMap: false,
+        inlineSources: true,
+        sourceRoot: 'src' 
+    };
+
+
+    const program = ts.createProgram(fileNames, sourceMapOptions);
     const transformer = createTransformer();
 
     fileNames.forEach(fileName => {
@@ -137,23 +147,36 @@ function compile(fileNames: string[], options: ts.CompilerOptions): void {
         // First let TypeScript emit the file with its default transformers
         const emitResult = program.emit(
             sourceFile, 
-            (outputPath, outputText) => {
-                // Now apply our custom transformer to the emitted JavaScript
-                const transformedSource = ts.createSourceFile(
-                    outputPath,
-                    outputText,
-                    ts.ScriptTarget.Latest,
-                    true
-                );
-                
-                const result = ts.transform(transformedSource, [transformer]);
-                const printer = ts.createPrinter();
-                const transformedText = printer.printFile(result.transformed[0]);
-                
-                // Write the final result with our __require function prepended
-                fs.writeFileSync(outputPath, requireFunction + transformedText);
-                
-                result.dispose();
+            (fileName: string, text: string, _writeByteOrderMark: boolean, _onError?: (message: string) => void, sourceFiles?: readonly ts.SourceFile[]) => {
+                // Handle source map cases
+                if (fileName.endsWith('.js.map')) {
+                    // Parse and modify the source map
+                    const sourceMap = JSON.parse(text) as { sourceRoot: string };
+                    sourceMap.sourceRoot = 'src';
+                    fs.writeFileSync(fileName, JSON.stringify(sourceMap));
+                    return;
+                }
+
+                if (fileName.endsWith('.js')) {
+                    // Add source map reference
+                    text = text + `\n//# sourceMappingURL=${path.basename(fileName)}.map`;
+                    
+                    const transformedSource = ts.createSourceFile(
+                        fileName,
+                        text,
+                        ts.ScriptTarget.Latest,
+                        true
+                    );
+                    
+                    const result = ts.transform(transformedSource, [transformer]);
+                    const printer = ts.createPrinter();
+                    const transformedText = printer.printFile(result.transformed[0]);
+                    
+                    // Write the final JS with require function
+                    fs.writeFileSync(fileName, requireFunction + transformedText);
+                    
+                    result.dispose();
+                }
             },
             undefined,
             false
