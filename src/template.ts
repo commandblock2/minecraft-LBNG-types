@@ -33,11 +33,8 @@ const script = registerScript.apply({
 });
 
 script.registerModule({
-    // @ts-ignore   
     name: "example-from-template",
-    // @ts-ignore   
-    description: "Ths is an example module generated in ts",
-    // @ts-ignore   
+    description: "Ths is an example module generated in ts", 
     category: "Client"
 
 }, (mod: ScriptModule) => {

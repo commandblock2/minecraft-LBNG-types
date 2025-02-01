@@ -1,0 +1,53 @@
+From 8a15f45f3ae378c0c894583d10c56e6473248b3b Mon Sep 17 00:00:00 2001
+From: commandblock2 <tony_hu@live.com>
+Date: Sun, 2 Feb 2025 03:44:24 +0800
+Subject: [PATCH] feat-module-registration-info
+
+---
+ .../liquidbounce/script/PolyglotScript.d.ts    | 18 ++++++++++++++----
+ 1 file changed, 14 insertions(+), 4 deletions(-)
+
+diff --git a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts
+index 2d3ad9e..ba644cc 100644
+--- a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts
++++ b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts
+@@ -1,15 +1,25 @@
+ import type { Object } from '../../../../java/lang/Object.d.ts'
+ import type { File } from '../../../../java/io/File.d.ts'
+ import type { ScriptDebugOptions } from '../../../../net/ccbluex/liquidbounce/script/ScriptDebugOptions.d.ts'
+-import type { Context } from '../../../../org/graalvm/polyglot/Context.d.ts'
+ import type { Function0 } from '../../../../kotlin/jvm/functions/Function0.d.ts'
+ import type { Unit } from '../../../../kotlin/Unit.d.ts'
+ import type { Choice } from '../../../../net/ccbluex/liquidbounce/config/types/Choice.d.ts'
+-import type { Command } from '../../../../net/ccbluex/liquidbounce/features/command/Command.d.ts'
+-import type { ClientModule } from '../../../../net/ccbluex/liquidbounce/features/module/ClientModule.d.ts'
+ import type { ChoiceConfigurable } from '../../../../net/ccbluex/liquidbounce/config/types/ChoiceConfigurable.d.ts'
+ import type { Function1 } from '../../../../kotlin/jvm/functions/Function1.d.ts'
+ import type { Value } from '../../../../org/graalvm/polyglot/Value.d.ts'
++import { ScriptModule } from './bindings/features/ScriptModule.js'
++
++
++interface ModuleObject {
++    name: string;
++    category: string;
++    description: string;
++    settings?: {
++        [key: string]: Value
++    };
++}
++
++
+ export class PolyglotScript extends Object {
+     constructor(language: string, file: File, debugOptions: ScriptDebugOptions)
+     // private context: Context;
+@@ -33,5 +43,5 @@ export class PolyglotScript extends Object {
+     on(eventName: string, handler: Function0<Unit>): Unit;
+     registerChoice(choiceConfigurable: ChoiceConfigurable<Choice>, choiceObject: { [key: string]: Object }, callback: Function1<Choice, Unit>): Unit;
+     registerCommand(commandObject: Value): Unit;
+-    registerModule(moduleObject: { [key: string]: Object }, callback: Function1<ClientModule, Unit>): Unit;
++    registerModule(moduleObject: ModuleObject, callback: (module: ScriptModule) => void): Unit;
+ }
+\ No newline at end of file
+-- 
+2.47.1
+
