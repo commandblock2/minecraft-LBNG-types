@@ -100,17 +100,15 @@ Now you can find a `types-gen` folder in your script folder, this contains the g
 
 ```
 
-### Writing scripts with TypeScript
+### Writing scripts with TypeScript Support
 
-In previous step 7, you should see 2 script content was logged (open your IDE or terminal depending on how you launched Minecraft, or just find the minecraft log), each starting with `// embedded.ts` and `// template.js`. 
-
-1. Place the two files with corresponding names in a folder called `src`, inside of the same directory as this README.md file.
-2. Run `npm install` in this directory.
-3. copy the generated folder `types-gen` to `generated-modules` folder in the root of your project.
-4. Run `npm install file:./generated-modules/types-gen/minecraft-yarn-definitions/ --no-save`, no-save for now, not sure if I should do this.
+1. Run `npm install` in this directory.
+2. copy the generated folder `types-gen` to `generated-modules` folder in the root of your project.
+3. Run `npm install file:./generated-modules/types-gen/minecraft-yarn-definitions/ --no-save`, no-save for now, not sure if I should do this.
+4. Run the script `apply-patch` with `npm run apply-patches`
 5. Open the `template.ts` file and try start writing your script, you should see TypeScript type hints for all the classes that are available. vscode will automatically generate working imports, but **you should not touch the import statement with `@embedded` namespace.**
-6. Run the compile.ts either with vscode debugger or with `npx ts-node compile.ts`. 
-7. Corresponding javascript file is generated in the same directory as your TypeScript files. (subject to change)
+6. Run the script `compile` with npm like step 4
+7. Corresponding javascript file is generated in the `dist` directory, you can link this dist directory to your scripts directory in LB? not sure if it will delete any existing scripts xD, never tried.
 
 
 ## Contribution and TODOs

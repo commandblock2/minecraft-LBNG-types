@@ -20,6 +20,7 @@ import {
     UnsafeThread,
     registerScript
 } from "@embedded";
+// DO NOT TOUCH ANYTHING ABOVE THIS LINE
 
 import { ScriptModule } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule";
 import { Matrix2d } from "@minecraft-yarn-definitions/types/org/joml/Matrix2d";
