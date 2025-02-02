@@ -87,7 +87,8 @@ script.registerModule({
 
 }, (mod) => {
     mod.on("enable", () => {
-        Client.displayChatMessage(`${new Matrix2d(1, 3, 5, 3)}`);
+        const matrix2d = new Matrix2d(1, 3, 5, 3);
+        Client.displayChatMessage(`${matrix2d} ${matrix2d instanceof Matrix2d}`);
         Client.displayChatMessage(`${mc.player?.abilities}`)
         Client.displayChatMessage(`${mc.player}`)
 

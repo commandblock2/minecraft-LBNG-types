@@ -31,34 +31,34 @@ function createTransformer(): ts.TransformerFactory<ts.SourceFile> {
     return (context: ts.TransformationContext): ts.Transformer<ts.SourceFile> => {
         const transformedIdentifiers = new Map<string, string>();
         const printer = ts.createPrinter();
-        
+
         const createVisitor = (isSecondPass: boolean) => (node: ts.Node): ts.Node => {
             // Handle empty const declarations only, but not sure why we got this
             if (ts.isVariableStatement(node)) {
                 const declarations = node.declarationList.declarations;
-                if (declarations.length === 1 && 
-                    !declarations[0].initializer && 
+                if (declarations.length === 1 &&
+                    !declarations[0].initializer &&
                     node.declarationList.flags & ts.NodeFlags.Const) {
                     return ts.factory.createEmptyStatement();
                 }
             }
 
-            
+
             // First pass: Handle require statements and record transformations
             if (!isSecondPass && ts.isVariableStatement(node)) {
                 const declarations = node.declarationList.declarations;
-                
+
                 const newDeclarations = declarations.filter(decl => decl.initializer).map(decl => {
-                    if (decl.initializer && 
+                    if (decl.initializer &&
                         ts.isCallExpression(decl.initializer) &&
                         ts.isIdentifier(decl.initializer.expression) &&
                         decl.initializer.expression.text === 'require') {
-                        
+
                         // Extract the module name and record the transformation
                         const originalName = (decl.name as ts.Identifier).text;
                         const moduleName = originalName.replace(/_(\d+)?$/, '');
                         transformedIdentifiers.set(originalName, moduleName);
-                        
+
                         return ts.factory.createVariableDeclaration(
                             ts.factory.createObjectBindingPattern([
                                 ts.factory.createBindingElement(
@@ -93,9 +93,56 @@ function createTransformer(): ts.TransformerFactory<ts.SourceFile> {
                 );
             }
 
-            
+
             // Second pass: Clean up transformed references
             if (isSecondPass) {
+
+                if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.InstanceOfKeyword) {
+                    const rightExpr = node.right;
+                    if (ts.isPropertyAccessExpression(rightExpr)) {
+                        const expression = rightExpr.expression;
+                        if (ts.isIdentifier(expression)) {
+                            const transformedName = transformedIdentifiers.get(expression.text);
+                            if (transformedName) {
+                                return ts.factory.createBinaryExpression(
+                                    node.left,
+                                    node.operatorToken,
+                                    ts.factory.createIdentifier(rightExpr.name.text)
+                                );
+                            }
+                        }
+                    }
+                }
+
+                // Handle static property access
+                if (ts.isPropertyAccessExpression(node)) {
+                    const expression = node.expression;
+                    if (ts.isPropertyAccessExpression(expression)) {
+                        const innerExpression = expression.expression;
+                        if (ts.isIdentifier(innerExpression)) {
+                            const transformedName = transformedIdentifiers.get(innerExpression.text);
+                            if (transformedName) {
+                                return ts.factory.createPropertyAccessExpression(
+                                    ts.factory.createIdentifier(expression.name.text),
+                                    node.name
+                                );
+                            }
+                        }
+                    }
+                    
+                    // Existing property access handling
+                    if (ts.isIdentifier(expression)) {
+                        const transformedName = transformedIdentifiers.get(expression.text);
+                        if (transformedName) {
+                            return ts.factory.createPropertyAccessExpression(
+                                ts.factory.createIdentifier(transformedName),
+                                node.name
+                            );
+                        }
+                    }
+                }
+
+
                 // Handle property access like _embedded_1.registerScript
                 if (ts.isPropertyAccessExpression(node)) {
                     const expression = node.expression;
@@ -149,7 +196,7 @@ function compile(fileNames: string[], options: ts.CompilerOptions): void {
         sourceMap: true,
         inlineSourceMap: false,
         inlineSources: true,
-        sourceRoot: 'src' 
+        sourceRoot: 'src'
     };
 
 
@@ -162,7 +209,7 @@ function compile(fileNames: string[], options: ts.CompilerOptions): void {
 
         // First let TypeScript emit the file with its default transformers
         const emitResult = program.emit(
-            sourceFile, 
+            sourceFile,
             (fileName: string, text: string, _writeByteOrderMark: boolean, _onError?: (message: string) => void, sourceFiles?: readonly ts.SourceFile[]) => {
                 // Handle source map cases
                 if (fileName.endsWith('.js.map')) {
@@ -176,21 +223,21 @@ function compile(fileNames: string[], options: ts.CompilerOptions): void {
                 if (fileName.endsWith('.js')) {
                     // Add source map reference
                     text = text + `\n//# sourceMappingURL=${path.basename(fileName)}.map`;
-                    
+
                     const transformedSource = ts.createSourceFile(
                         fileName,
                         text,
                         ts.ScriptTarget.Latest,
                         true
                     );
-                    
+
                     const result = ts.transform(transformedSource, [transformer]);
                     const printer = ts.createPrinter();
                     const transformedText = printer.printFile(result.transformed[0]);
-                    
+
                     // Write the final JS with require function
                     fs.writeFileSync(fileName, requireFunction + transformedText);
-                    
+
                     result.dispose();
                 }
             },
