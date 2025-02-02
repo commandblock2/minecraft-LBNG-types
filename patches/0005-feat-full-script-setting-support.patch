@@ -1,0 +1,142 @@
+From 27d512881e86eed3916cd56e4ea1839d9d1f6212 Mon Sep 17 00:00:00 2001
+From: commandblock2 <tony_hu@live.com>
+Date: Sun, 2 Feb 2025 19:06:58 +0800
+Subject: [PATCH] feat-full-script-setting-support
+
+---
+ .../config/types/RangedValue.d.ts             |  1 +
+ .../liquidbounce/config/types/Value.d.ts      | 27 ++++++++++++++++---
+ .../liquidbounce/script/PolyglotScript.d.ts   | 27 +++++++++++++------
+ .../bindings/features/ScriptSetting.d.ts      |  2 +-
+ 4 files changed, 44 insertions(+), 13 deletions(-)
+
+diff --git a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/config/types/RangedValue.d.ts b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/config/types/RangedValue.d.ts
+index 828af95..d505f7b 100644
+--- a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/config/types/RangedValue.d.ts
++++ b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/config/types/RangedValue.d.ts
+@@ -8,4 +8,5 @@ export class RangedValue<T extends Object> extends Value<T> {
+     range: ClosedRange<Object | null>;
+     suffix: string;
+     setByString(string: string): Unit;
++
+ }
+\ No newline at end of file
+diff --git a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/config/types/Value.d.ts b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/config/types/Value.d.ts
+index 306b1c7..2a25287 100644
+--- a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/config/types/Value.d.ts
++++ b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/config/types/Value.d.ts
+@@ -10,6 +10,12 @@ import type { Function0 } from '../../../../../kotlin/jvm/functions/Function0.d.
+ import type { KProperty } from '../../../../../kotlin/reflect/KProperty.d.ts'
+ import type { Value } from '../../../../../org/graalvm/polyglot/Value.d.ts'
+ import type { Result } from '../../../../../kotlin/Result.d.ts'
++import type { ClosedFloatingPointRange } from '../../../../../kotlin/ranges/ClosedFloatingPointRange.d.ts'
++import type { InputUtil$Key } from '../../../../../net/minecraft/client/util/InputUtil$Key.d.ts'
++import type { NamedChoice } from './NamedChoice.d.ts'
++
++
++
+ export class Value<T extends Object> extends Object {
+     constructor(name: string, defaultValue: T, valueType: ValueType, listType: ListValueType, independentDescription: boolean)
+     // private changedListeners: Function1<T, Unit>[];
+@@ -30,8 +36,8 @@ export class Value<T extends Object> extends Object {
+     doNotIncludeAlways(): Value<T>;
+     doNotIncludeWhen(condition: Function0<boolean>): Value<T>;
+     get(): T;
+-    getValue(u: Object | null, property: KProperty<Object | null>): T;
+-    getValue(): Object;
++    // getValue(u: Object | null, property: KProperty<Object | null>): T;
++    getValue(): T;
+     independentDescription(): Value<T>;
+     notAnOption(): Value<T>;
+     onChange(listener: Function1<T, T>): Value<T>;
+@@ -40,7 +46,20 @@ export class Value<T extends Object> extends Object {
+     set(t: T): Unit;
+     set(t: T, apply: Function1<T, Unit>): Unit;
+     setByString(string: string): Unit;
+-    setValue(u: Object | null, property: KProperty<Object | null>, t: T): Unit;
+-    setValue(t: Value): Result<Unit>;
++    // setValue(u: Object | null, property: KProperty<Object | null>, t: T): Unit;
++    // setValue(t: Value): Result<Unit>;
++    setValue(value: T): Unit;
+     type(): ValueType;
++
++    getValue(): T extends ClosedFloatingPointRange<number> ? number[] : T;
++    setValue(value: T extends ClosedFloatingPointRange<number> ? number[] | T : T): Unit;
++
++    // Special case for key values
++    getValue(): T extends InputUtil$Key ? string : T;
++    setValue(value: T extends InputUtil$Key ? string | T : T): Unit;
++
++    // Special case for named choices
++    getValue(): T extends NamedChoice ? string : T;
++    setValue(value: T extends NamedChoice ? string | T : T): Unit;
++
+ }
+\ No newline at end of file
+diff --git a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts
+index a8e6b5b..4496780 100644
+--- a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts
++++ b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts
+@@ -6,20 +6,27 @@ import type { Unit } from '../../../../kotlin/Unit.d.ts'
+ import type { Choice } from '../../../../net/ccbluex/liquidbounce/config/types/Choice.d.ts'
+ import type { ChoiceConfigurable } from '../../../../net/ccbluex/liquidbounce/config/types/ChoiceConfigurable.d.ts'
+ import type { Function1 } from '../../../../kotlin/jvm/functions/Function1.d.ts'
+-import { ScriptModule } from './bindings/features/ScriptModule.js'
+-import { Value } from '../config/types/Value.js'
+-import { Value as PolyglotValue } from 'org/graalvm/polyglot/Value.js'
++import type { ScriptModule } from './bindings/features/ScriptModule.d.ts'
++import type { Value } from '../config/types/Value.d.ts'
++import type { Value as PolyglotValue } from 'org/graalvm/polyglot/Value.d.ts'
+ 
+ 
+-interface ModuleObject {
++type SettingsToValues<T> = {
++    [K in keyof T]: T[K] extends Value<any> ? T[K] : never;
++}
++
++
++// Module type definitions
++interface ModuleObject<TSettings = any> {
+     name: string;
+     category: string;
+     description: string;
+-    settings?: {
+-        [key: string]: Value<any>
+-    };
++    settings?: TSettings;
+ }
+ 
++
++
++
+ interface CommandObject {
+     name: string;
+     aliases?: string[];
+@@ -58,5 +65,9 @@ export class PolyglotScript extends Object {
+     on(eventName: string, handler: Function0<Unit>): Unit;
+     registerChoice(choiceConfigurable: ChoiceConfigurable<Choice>, choiceObject: { [key: string]: Object }, callback: Function1<Choice, Unit>): Unit;
+     registerCommand(commandObject: CommandObject): Unit;
+-    registerModule(moduleObject: ModuleObject, callback: (module: ScriptModule) => void): Unit;
++    registerModule<TSettings>(
++        moduleObject: ModuleObject<TSettings>, 
++        callback: (module: ScriptModule & { settings: SettingsToValues<TSettings> }) => void
++    ): Unit;
++
+ }
+\ No newline at end of file
+diff --git a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting.d.ts b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting.d.ts
+index d49d35d..ba04da4 100644
+--- a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting.d.ts
++++ b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting.d.ts
+@@ -67,7 +67,7 @@ export class ScriptSetting extends Object {
+     float(value: FloatValue): RangedValue<number>;
+     floatRange(value: FloatRangeValue): RangedValue<ClosedFloatingPointRange<number>>;
+     int(value: IntValue): RangedValue<number>;
+-    intRange(value: IntRangeValue): RangedValue<(Object | null)[]>;
++    intRange(value: IntRangeValue): RangedValue<number[]>;
+     key(value: KeyValue): Value<InputUtil$Key>;
+     // private rangedValue(name: string, default: T, range: ClosedRange<Object | null>, suffix: string, valueType: ValueType): RangedValue<T>;
+ 
+-- 
+2.47.1
+
