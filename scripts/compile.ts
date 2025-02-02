@@ -29,15 +29,26 @@ var exports = {}
 
 function createTransformer(): ts.TransformerFactory<ts.SourceFile> {
     return (context: ts.TransformationContext): ts.Transformer<ts.SourceFile> => {
-        // Keep track of transformed identifiers
         const transformedIdentifiers = new Map<string, string>();
+        const printer = ts.createPrinter();
         
         const createVisitor = (isSecondPass: boolean) => (node: ts.Node): ts.Node => {
+            // Handle empty const declarations only, but not sure why we got this
+            if (ts.isVariableStatement(node)) {
+                const declarations = node.declarationList.declarations;
+                if (declarations.length === 1 && 
+                    !declarations[0].initializer && 
+                    node.declarationList.flags & ts.NodeFlags.Const) {
+                    return ts.factory.createEmptyStatement();
+                }
+            }
+
+            
             // First pass: Handle require statements and record transformations
             if (!isSecondPass && ts.isVariableStatement(node)) {
                 const declarations = node.declarationList.declarations;
                 
-                const newDeclarations = declarations.map(decl => {
+                const newDeclarations = declarations.filter(decl => decl.initializer).map(decl => {
                     if (decl.initializer && 
                         ts.isCallExpression(decl.initializer) &&
                         ts.isIdentifier(decl.initializer.expression) &&
@@ -69,6 +80,10 @@ function createTransformer(): ts.TransformerFactory<ts.SourceFile> {
                     return decl;
                 });
 
+                if (newDeclarations.length === 0) {
+                    return ts.factory.createEmptyStatement();
+                }
+
                 return ts.factory.createVariableStatement(
                     undefined,
                     ts.factory.createVariableDeclarationList(
@@ -77,6 +92,7 @@ function createTransformer(): ts.TransformerFactory<ts.SourceFile> {
                     )
                 );
             }
+
             
             // Second pass: Clean up transformed references
             if (isSecondPass) {
