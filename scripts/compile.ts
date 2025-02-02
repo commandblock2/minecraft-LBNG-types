@@ -31,162 +31,133 @@ function createTransformer(): ts.TransformerFactory<ts.SourceFile> {
     return (context: ts.TransformationContext): ts.Transformer<ts.SourceFile> => {
         const transformedIdentifiers = new Map<string, string>();
         const printer = ts.createPrinter();
-
+        
         const createVisitor = (isSecondPass: boolean) => (node: ts.Node): ts.Node => {
-            // Handle empty const declarations only, but not sure why we got this
-            if (ts.isVariableStatement(node)) {
-                const declarations = node.declarationList.declarations;
-                if (declarations.length === 1 &&
-                    !declarations[0].initializer &&
-                    node.declarationList.flags & ts.NodeFlags.Const) {
-                    return ts.factory.createEmptyStatement();
-                }
-            }
-
-
             // First pass: Handle require statements and record transformations
-            if (!isSecondPass && ts.isVariableStatement(node)) {
-                const declarations = node.declarationList.declarations;
-
-                const newDeclarations = declarations.filter(decl => decl.initializer).map(decl => {
-                    if (decl.initializer &&
-                        ts.isCallExpression(decl.initializer) &&
-                        ts.isIdentifier(decl.initializer.expression) &&
-                        decl.initializer.expression.text === 'require') {
-
-                        // Extract the module name and record the transformation
-                        const originalName = (decl.name as ts.Identifier).text;
-                        const moduleName = originalName.replace(/_(\d+)?$/, '');
-                        transformedIdentifiers.set(originalName, moduleName);
-
-                        return ts.factory.createVariableDeclaration(
-                            ts.factory.createObjectBindingPattern([
-                                ts.factory.createBindingElement(
-                                    undefined,
-                                    undefined,
-                                    ts.factory.createIdentifier(moduleName),
-                                    undefined
-                                )
-                            ]),
-                            undefined,
-                            undefined,
-                            ts.factory.createCallExpression(
-                                ts.factory.createIdentifier('__require'),
-                                undefined,
-                                decl.initializer.arguments
-                            )
-                        );
-                    }
-                    return decl;
-                });
-
-                if (newDeclarations.length === 0) {
-                    return ts.factory.createEmptyStatement();
-                }
-
-                return ts.factory.createVariableStatement(
-                    undefined,
-                    ts.factory.createVariableDeclarationList(
-                        newDeclarations,
-                        ts.NodeFlags.Const
-                    )
-                );
-            }
-
-
-            // Second pass: Clean up transformed references
-            if (isSecondPass) {
-
-                if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.InstanceOfKeyword) {
-                    const rightExpr = node.right;
-                    if (ts.isPropertyAccessExpression(rightExpr)) {
-                        const expression = rightExpr.expression;
-                        if (ts.isIdentifier(expression)) {
-                            const transformedName = transformedIdentifiers.get(expression.text);
-                            if (transformedName) {
-                                return ts.factory.createBinaryExpression(
-                                    node.left,
-                                    node.operatorToken,
-                                    ts.factory.createIdentifier(rightExpr.name.text)
-                                );
-                            }
-                        }
-                    }
-                }
-
-                // Handle static property access
-                if (ts.isPropertyAccessExpression(node)) {
-                    const expression = node.expression;
-                    if (ts.isPropertyAccessExpression(expression)) {
-                        const innerExpression = expression.expression;
-                        if (ts.isIdentifier(innerExpression)) {
-                            const transformedName = transformedIdentifiers.get(innerExpression.text);
-                            if (transformedName) {
-                                return ts.factory.createPropertyAccessExpression(
-                                    ts.factory.createIdentifier(expression.name.text),
-                                    node.name
-                                );
-                            }
-                        }
+            if (!isSecondPass) {
+                if (ts.isVariableStatement(node)) {
+                    const declarations = node.declarationList.declarations;
+                    
+                    // Handle empty const declarations
+                    if (declarations.length === 1 && 
+                        !declarations[0].initializer && 
+                        node.declarationList.flags & ts.NodeFlags.Const) {
+                        return ts.factory.createEmptyStatement();
                     }
                     
-                    // Existing property access handling
-                    if (ts.isIdentifier(expression)) {
-                        const transformedName = transformedIdentifiers.get(expression.text);
-                        if (transformedName) {
-                            return ts.factory.createPropertyAccessExpression(
-                                ts.factory.createIdentifier(transformedName),
-                                node.name
+                    const newDeclarations = declarations.filter(decl => decl.initializer).map(decl => {
+                        if (decl.initializer && 
+                            ts.isCallExpression(decl.initializer) &&
+                            ts.isIdentifier(decl.initializer.expression) &&
+                            decl.initializer.expression.text === 'require') {
+                            
+                            const originalName = (decl.name as ts.Identifier).text;
+                            const moduleName = originalName.replace(/_(\d+)?$/, '');
+                            transformedIdentifiers.set(originalName, moduleName);
+                            
+                            return ts.factory.createVariableDeclaration(
+                                ts.factory.createObjectBindingPattern([
+                                    ts.factory.createBindingElement(
+                                        undefined,
+                                        undefined,
+                                        ts.factory.createIdentifier(moduleName),
+                                        undefined
+                                    )
+                                ]),
+                                undefined,
+                                undefined,
+                                ts.factory.createCallExpression(
+                                    ts.factory.createIdentifier('__require'),
+                                    undefined,
+                                    decl.initializer.arguments
+                                )
                             );
                         }
-                    }
-                }
+                        return decl;
+                    });
 
-
-                // Handle property access like _embedded_1.registerScript
-                if (ts.isPropertyAccessExpression(node)) {
-                    const expression = node.expression;
-                    if (ts.isIdentifier(expression)) {
-                        const transformedName = transformedIdentifiers.get(expression.text);
-                        if (transformedName) {
-                            return ts.factory.createPropertyAccessExpression(
-                                ts.factory.createIdentifier(transformedName),
-                                node.name
-                            );
-                        }
+                    if (newDeclarations.length === 0) {
+                        return ts.factory.createEmptyStatement();
                     }
+
+                    return ts.factory.createVariableStatement(
+                        undefined,
+                        ts.factory.createVariableDeclarationList(
+                            newDeclarations,
+                            ts.NodeFlags.Const
+                        )
+                    );
                 }
                 
-                // Handle new expressions like new ScriptModule_1.ScriptModule
-                if (ts.isNewExpression(node)) {
-                    if (ts.isPropertyAccessExpression(node.expression)) {
-                        const expression = node.expression.expression;
-                        if (ts.isIdentifier(expression)) {
-                            const transformedName = transformedIdentifiers.get(expression.text);
-                            if (transformedName) {
-                                return ts.factory.createNewExpression(
-                                    ts.factory.createIdentifier(node.expression.name.text),
-                                    node.typeArguments,
-                                    node.arguments
-                                );
-                            }
+                return ts.visitEachChild(node, createVisitor(isSecondPass), context);
+            }
+            let transformedNode = node;
+            
+            // Transform property access expressions
+            if (ts.isPropertyAccessExpression(node)) {
+                const expression = node.expression;
+                if (ts.isIdentifier(expression)) {
+                    const transformedName = transformedIdentifiers.get(expression.text);
+                    if (transformedName) {
+                        transformedNode = ts.factory.createPropertyAccessExpression(
+                            ts.factory.createIdentifier(transformedName),
+                            node.name
+                        );
+                    }
+                }
+            }
+            
+            // Transform new expressions
+            if (ts.isNewExpression(node)) {
+                if (ts.isPropertyAccessExpression(node.expression)) {
+                    const expression = node.expression.expression;
+                    if (ts.isIdentifier(expression)) {
+                        const transformedName = transformedIdentifiers.get(expression.text);
+                        if (transformedName) {
+                            transformedNode = ts.factory.createNewExpression(
+                                ts.factory.createIdentifier(node.expression.name.text),
+                                node.typeArguments,
+                                node.arguments?.map(arg => 
+                                    ts.visitNode(arg, createVisitor(true)) as ts.Expression
+                                ) as readonly ts.Expression[] || []
+                            );
                         }
                     }
                 }
             }
             
-            return ts.visitEachChild(node, createVisitor(isSecondPass), context);
+            // Transform instanceof expressions
+            if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.InstanceOfKeyword) {
+                const rightExpr = node.right;
+                if (ts.isPropertyAccessExpression(rightExpr)) {
+                    const expression = rightExpr.expression;
+                    if (ts.isIdentifier(expression)) {
+                        const transformedName = transformedIdentifiers.get(expression.text);
+                        if (transformedName) {
+                            transformedNode = ts.factory.createBinaryExpression(
+                                ts.visitNode(node.left, createVisitor(true)) as ts.Expression,
+                                node.operatorToken,
+                                ts.factory.createIdentifier(rightExpr.name.text)
+                            );
+                        }
+                    }
+                }
+            }
+            
+            // Recursively transform all children of the transformed node
+            return ts.visitEachChild(transformedNode, createVisitor(true), context);
         };
         
         return (sourceFile: ts.SourceFile): ts.SourceFile => {
             // First pass: Transform requires and record changes
             let result = ts.visitNode(sourceFile, createVisitor(false)) as ts.SourceFile;
-            // Second pass: Clean up references
+            // Second pass: Deep recursive transformation of references
             result = ts.visitNode(result, createVisitor(true)) as ts.SourceFile;
             return result;
         };
     };
 }
+
 
 
 function compile(fileNames: string[], options: ts.CompilerOptions): void {
