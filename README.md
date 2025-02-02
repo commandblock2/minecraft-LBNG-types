@@ -4,11 +4,14 @@ This repo contains
 - instruction and scripts for creating 
     - typescript definitions for Minecraft (with mods*)
     - typescript definitions for LiquidBounce NextGen
-    - typescript definitions for embedded context of LiquidBounce NextGen scriptAPI
-    - an example LiquidBounce NextGen script using typescript (generated from this repo)
+- typescript definitions for embedded context of LiquidBounce NextGen scriptAPI
+- a set of manually maintained patches to make the script api work properly
+- a set of examples LiquidBounce NextGen script using typescript 
 - a compiler script that will compile all the .ts files into .js files that could run in graaljs (LiquidBounce NextGen runtime)
 
-Note: the mods are only limited to those presented at the development environment of LiquidBounce NextGen
+Note: the mods are only limited to those presented at the development environment of LiquidBounce NextGen.
+
+**When writing your script in typescript, expect inconsistencies with script API in js, but please report them to this repo if you can**
 
 ## Instruction (subject to change)
 
@@ -108,7 +111,7 @@ Now you can find a `types-gen` folder in your script folder, this contains the g
 4. Run the script `apply-patch` with `npm run apply-patches`
 5. Open the `template.ts` file and try start writing your script, you should see TypeScript type hints for all the classes that are available. vscode will automatically generate working imports, but **you should not touch the import statement with `@embedded` namespace.**
 6. Run the script `compile` with npm like step 4
-7. Corresponding javascript file is generated in the `dist` directory, you can link this dist directory to your scripts directory in LB? not sure if it will delete any existing scripts xD, never tried.
+7. Corresponding javascript file is generated in the `dist` directory, you can link this dist directory to your scripts directory in LB.
 
 
 ## Contribution and TODOs
