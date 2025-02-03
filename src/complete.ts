@@ -107,7 +107,7 @@ script.registerModule({
         Client.displayChatMessage(`Messages: ${mod.settings.messages.getValue()}`);
         Client.displayChatMessage(`Animal: ${mod.settings.animal.getValue()}`);
 
-        mod.settings.fastSwing.setValue(true);
+        mod.settings.fastSwing.setValue(false);
         mod.settings.range.setValue(2.3);
         mod.settings.randomness.setValue([2, 4.34]);
         mod.settings.expand.setValue(2);

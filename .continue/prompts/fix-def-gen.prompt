@@ -30,3 +30,4 @@ definitions with the following information
 (either be typescript/javascript example usage or kotlin/java code that parses json, 
 if such information is not present, do not answer and ask the user to provide them).
 Please remember those examples/java/kotlin functions are best keep un-touched, meaning that we should fix the .d.ts files instead
+@problems, please only look at the errors and ignore the warning
