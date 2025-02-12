@@ -1,6 +1,7 @@
 // utils.ts
 import fs from 'fs/promises'
 import path from 'path'
+import { execSync } from 'child_process'
 
 export async function validateDirs(patchDir: string, workDir: string) {
     // Ensure absolute paths
@@ -24,7 +25,6 @@ export async function validateDirs(patchDir: string, workDir: string) {
     return { absolutePatchDir, absoluteWorkDir }
 }
 
-
 export function sanitizeCommitMessage(message: string): string {
     return message
         .trim()
@@ -40,4 +40,60 @@ export function sanitizeCommitMessage(message: string): string {
         .replace(/^-+|-+$/g, '')
         // Limit length
         .slice(0, 50);
+}
+
+export async function initGitRepo(workDir: string) {
+    // Initialize new git repo
+    execSync('git init', { cwd: workDir })
+    execSync('git add .', { cwd: workDir })
+    execSync('git commit -m "Initial commit"', { cwd: workDir })
+}
+
+export async function cleanupGitRepo(workDir: string) {
+    await fs.rm(path.join(workDir, '.git'), { recursive: true, force: true })
+}
+
+export async function applyPatchWithFallback(
+    patchPath: string, 
+    workDir: string, 
+    commitMessage: string,
+    options: { allowWhitespace?: boolean } = {}
+): Promise<boolean> {
+    try {
+        // First try with strict application
+        execSync(`git apply --index "${patchPath}"`, { 
+            cwd: workDir,
+            stdio: 'pipe' // Capture output
+        })
+        
+        execSync(`git commit -m "${commitMessage}"`, { 
+            cwd: workDir,
+            encoding: 'utf-8',
+            stdio: 'pipe'
+        })
+        
+        return true
+    } catch (error) {
+        if (options.allowWhitespace) {
+            try {
+                // Try again with whitespace errors ignored
+                execSync(`git apply --index --whitespace=nowarn "${patchPath}"`, { 
+                    cwd: workDir,
+                    stdio: 'pipe'
+                })
+                
+                execSync(`git commit -m "${commitMessage}"`, { 
+                    cwd: workDir,
+                    encoding: 'utf-8',
+                    stdio: 'pipe'
+                })
+                
+                console.warn(`Warning: Patch ${path.basename(patchPath)} applied with whitespace warnings`)
+                return true
+            } catch {
+                return false
+            }
+        }
+        return false
+    }
 }

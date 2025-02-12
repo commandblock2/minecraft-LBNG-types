@@ -1,14 +1,9 @@
-// apply-patches.ts
 import fs from 'fs/promises'
 import path from 'path'
-import { execSync } from 'child_process'
-import { sanitizeCommitMessage, validateDirs } from './utils'
-
+import { sanitizeCommitMessage, validateDirs, initGitRepo, cleanupGitRepo, applyPatchWithFallback } from './utils'
 async function applyPatches(patchDir: string, workDir: string) {
-    // Validate directories
     const { absolutePatchDir, absoluteWorkDir } = await validateDirs(patchDir, workDir)
 
-    // Check if working directory already contains a git repo
     const hasGitRepo = await fs.access(path.join(absoluteWorkDir, '.git'))
         .then(() => true)
         .catch(() => false)
@@ -17,22 +12,15 @@ async function applyPatches(patchDir: string, workDir: string) {
         throw new Error('Working directory already contains a git repository')
     }
 
+    try {
+        await initGitRepo(absoluteWorkDir)
 
-    // Initialize new git repo
-    execSync('git init', { cwd: absoluteWorkDir })
-    execSync('git add .', { cwd: absoluteWorkDir })
-    execSync('git commit -m "Initial commit"', { cwd: absoluteWorkDir })
+        const patches = (await fs.readdir(absolutePatchDir))
+            .filter(file => file.endsWith('.patch'))
+            .sort()
 
-    // Get all patch files sorted
-    const patches = (await fs.readdir(absolutePatchDir))
-        .filter(file => file.endsWith('.patch'))
-        .sort()
-
-    // Apply each patch
-    for (const patch of patches) {
-        const patchPath = path.join(absolutePatchDir, patch)
-        try {
-            // Read the patch file to extract original commit message
+        for (const patch of patches) {
+            const patchPath = path.join(absolutePatchDir, patch)
             const patchContent = await fs.readFile(patchPath, 'utf-8')
             const commitMessage = patchContent
                 .split('\n')
@@ -42,15 +30,23 @@ async function applyPatches(patchDir: string, workDir: string) {
 
             const sanitizedMessage = sanitizeCommitMessage(commitMessage)
 
-            execSync(`git apply --index "${patchPath}"`, { cwd: absoluteWorkDir })
-            execSync(`git commit -m "${sanitizedMessage}"`, { 
-                cwd: absoluteWorkDir,
-                encoding: 'utf-8'
-            })
-        } catch (error) {
-            console.error(`Failed to apply patch: ${patch}`)
-            throw error
+            const success = await applyPatchWithFallback(
+                patchPath,
+                absoluteWorkDir,
+                sanitizedMessage,
+                { allowWhitespace: true }
+            )
+
+            if (!success) {
+                const message = `Failed to apply patch: ${patch}, please use \`apply-patches-interative\` instead.`;
+                console.error(message)
+                await cleanupGitRepo(absoluteWorkDir)
+                throw new Error(message)
+            }
         }
+    } catch (error) {
+        await cleanupGitRepo(absoluteWorkDir).catch(console.error)
+        throw error
     }
 }
 
