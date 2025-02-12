@@ -1,3 +1,4 @@
+// embedded.ts
 declare module "@embedded" {
     // imports
     import { ScriptSetting } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting";
@@ -22,31 +23,31 @@ declare module "@embedded" {
     
     
     // exports
-       export const Setting: ScriptSetting;
+        export const Setting: ScriptSetting;
     
-       export const mc: MinecraftClient;
+        export const mc: MinecraftClient;
     
-       export const Client: ScriptClient;
+        export const Client: ScriptClient;
     
-       export const RotationUtil: ScriptRotationUtil;
+        export const RotationUtil: ScriptRotationUtil;
     
-       export const ItemUtil: ScriptItemUtil;
+        export const ItemUtil: ScriptItemUtil;
     
-       export const NetworkUtil: ScriptNetworkUtil;
+        export const NetworkUtil: ScriptNetworkUtil;
     
-       export const InteractionUtil: ScriptInteractionUtil;
+        export const InteractionUtil: ScriptInteractionUtil;
     
-       export const BlockUtil: ScriptBlockUtil;
+        export const BlockUtil: ScriptBlockUtil;
     
-       export const MovementUtil: ScriptMovementUtil;
+        export const MovementUtil: ScriptMovementUtil;
     
-       export const ReflectionUtil: ScriptReflectionUtil;
+        export const ReflectionUtil: ScriptReflectionUtil;
     
-       export const ParameterValidator: ScriptParameterValidator;
+        export const ParameterValidator: ScriptParameterValidator;
     
-       export const UnsafeThread: ScriptUnsafeThread;
+        export const UnsafeThread: ScriptUnsafeThread;
     
-       export const registerScript: PolyglotScript$RegisterScript;
+        export const registerScript: PolyglotScript$RegisterScript;
     
         export { Vec3i };
     
