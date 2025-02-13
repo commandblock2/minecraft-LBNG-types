@@ -1,22 +1,23 @@
-From 80f2313aaaf1fef02431828f7f2ce41fd349c610 Mon Sep 17 00:00:00 2001
+From 5e6f69cb559c9df19f29b80dea049a5ccdffbe4c Mon Sep 17 00:00:00 2001
 From: commandblock2 <tony_hu@live.com>
-Date: Fri, 14 Feb 2025 00:31:50 +0800
-Subject: [PATCH] feat-script-settings-and-command-registration
+Date: Fri, 14 Feb 2025 02:26:03 +0800
+Subject: [PATCH] feat: script-settings-and-command-registration
 
 ---
- .../liquidbounce/script/PolyglotScript.d.ts   | 27 +++++--
+ .../liquidbounce/script/PolyglotScript.d.ts   | 28 +++++--
  .../bindings/features/ScriptSetting.d.ts      | 74 +++++++++++++++----
- 2 files changed, 83 insertions(+), 18 deletions(-)
+ 2 files changed, 83 insertions(+), 19 deletions(-)
 
 diff --git a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts
-index e70db91..c82dff5 100644
+index ed530c1..c2464dc 100644
 --- a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts
 +++ b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts
-@@ -9,18 +9,34 @@ import type { Command } from '../../../../net/ccbluex/liquidbounce/features/comm
+@@ -9,19 +9,34 @@ import type { Command } from '../../../../net/ccbluex/liquidbounce/features/comm
  import type { ClientModule } from '../../../../net/ccbluex/liquidbounce/features/module/ClientModule.d.ts'
  import type { ChoiceConfigurable } from '../../../../net/ccbluex/liquidbounce/config/types/ChoiceConfigurable.d.ts'
  import type { Function1 } from '../../../../kotlin/jvm/functions/Function1.d.ts'
 -import type { Value } from '../../../../org/graalvm/polyglot/Value.d.ts'
+-
 -import type { ScriptModule } from './bindings/features/ScriptModule.d.ts'
 +import { ScriptModule } from './bindings/features/ScriptModule.js'
 +import { Value } from '../config/types/Value.js'
@@ -49,8 +50,8 @@ index e70db91..c82dff5 100644
 +
  export class PolyglotScript extends Object {
      constructor(language: string, file: File, debugOptions: ScriptDebugOptions)
-     // private getContext(): Context;
-@@ -43,6 +59,7 @@ export class PolyglotScript extends Object {
+     context(): Context;
+@@ -44,6 +59,7 @@ export class PolyglotScript extends Object {
      initScript(): Unit;
      on(eventName: string, handler: Function0<Unit>): Unit;
      registerChoice(choiceConfigurable: ChoiceConfigurable<Choice>, choiceObject: { [key: string]: Object }, callback: Function1<Choice, Unit>): Unit;

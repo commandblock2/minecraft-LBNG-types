@@ -1,12 +1,10 @@
-// apply-patches-iterative.ts
 import fs from 'fs/promises'
 import path from 'path'
 import { execSync, spawnSync } from 'child_process'
-import { initGitRepo, sanitizeCommitMessage, validateDirs } from './utils'
+import { initGitRepo, sanitizeCommitMessage, validateDirs, applyPatchWithFallback } from './utils'
 import readline from 'readline'
 
 async function applyPatchesIterative(patchDir: string, workDir: string) {
-    // Validate directories
     const { absolutePatchDir, absoluteWorkDir } = await validateDirs(patchDir, workDir)
 
     const hasGitRepo = await fs.access(path.join(absoluteWorkDir, '.git'))
@@ -19,7 +17,6 @@ async function applyPatchesIterative(patchDir: string, workDir: string) {
 
     await initGitRepo(absoluteWorkDir)
 
-    // Get all patch files sorted
     const patches = (await fs.readdir(absolutePatchDir))
         .filter(file => file.endsWith('.patch'))
         .sort()
@@ -33,11 +30,9 @@ async function applyPatchesIterative(patchDir: string, workDir: string) {
         return new Promise(resolve => rl.question(query, resolve))
     }
 
-    // Apply each patch with interactive handling of failures
     for (const patch of patches) {
         const patchPath = path.join(absolutePatchDir, patch)
         try {
-            // Read the patch file to extract original commit message
             const patchContent = await fs.readFile(patchPath, 'utf-8')
             const commitMessage = patchContent
                 .split('\n')
@@ -49,27 +44,28 @@ async function applyPatchesIterative(patchDir: string, workDir: string) {
 
             console.log(`Applying patch: ${patch}`)
             console.log(`Commit message: ${sanitizedMessage}`)
-            
-            // Try to apply the patch
-            try {
-                execSync(`git apply --index --whitespace=fix "${patchPath}"`, { cwd: absoluteWorkDir })
-                execSync(`git commit -m "${sanitizedMessage}"`, { 
-                    cwd: absoluteWorkDir,
-                    encoding: 'utf-8'
-                })
+
+            const success = await applyPatchWithFallback(
+                patchPath,
+                absoluteWorkDir,
+                sanitizedMessage,
+                { allowWhitespace: true }
+            )
+            if (success) {
                 console.log(`Successfully applied: ${patch}`)
-            } catch (error) {
-                console.error(`Failed to apply patch: ${patch}`)
-                console.error(error)
-                
+                continue
+            }
+
+            console.error(`Failed to apply patch: ${patch}`)
+
                 const answer = await askQuestion(
                     'Patch failed to apply. Options:\n' +
                     '  [s]kip - Skip this patch and continue\n' +
                     '  [a]bort - Abort the process\n' +
-                    '  [f]ix - Open shell for manual fixing (exit shell when done)\n' +
+                '  [f]fix - Open shell for manual fixing (exit shell when done)\n' +
                     'Choose an option (s/a/f): '
-                )            
-                
+                )
+
                 if (answer.toLowerCase() === 'a') {
                     console.log('Aborting patch application process')
                     rl.close()
@@ -78,33 +74,29 @@ async function applyPatchesIterative(patchDir: string, workDir: string) {
                     console.log('Opening shell for manual fixing. Exit the shell when done.')
                     console.log(`Working directory: ${absoluteWorkDir}`)
                     console.log(`Patch file: ${patchPath}`)
-                    
-                    // Open an interactive shell
+
                     const shell = process.platform === 'win32' ? 'cmd.exe' : 'bash'
-                    spawnSync(shell, [], { 
+                    spawnSync(shell, [], {
                         cwd: absoluteWorkDir,
                         stdio: 'inherit'
                     })
-                    
-                    // After shell exits, ask if the patch is fixed
+
                     const fixed = await askQuestion('Have you fixed the patch? (y/n): ')
-                    
+
                     if (fixed.toLowerCase() === 'y') {
                         console.log(`Continuing to next patch`)
                     } else {
                         console.log(`Skipping patch: ${patch}`)
                     }
                 } else {
-                    // Skip this patch
                     console.log(`Skipping patch: ${patch}`)
                 }
-            }
         } catch (error) {
             console.error(`Error processing patch: ${patch}`, error)
             throw error
         }
     }
-    
+
     rl.close()
     console.log('All patches have been processed.')
 }

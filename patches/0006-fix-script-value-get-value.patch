@@ -1,6 +1,6 @@
-From ddebf1433abbe922f1b984157036a239582fc078 Mon Sep 17 00:00:00 2001
+From c0d60c126ba1bebc63df5dbee8b63359048960b6 Mon Sep 17 00:00:00 2001
 From: commandblock2 <tony_hu@live.com>
-Date: Fri, 14 Feb 2025 01:03:37 +0800
+Date: Fri, 14 Feb 2025 02:28:14 +0800
 Subject: [PATCH] fix-script-value-get-value
 
 ---
@@ -8,7 +8,7 @@ Subject: [PATCH] fix-script-value-get-value
  1 file changed, 21 insertions(+), 10 deletions(-)
 
 diff --git a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/config/types/Value.d.ts b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/config/types/Value.d.ts
-index 669a829..f96ee3e 100644
+index 4261cc7..7eedc7c 100644
 --- a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/config/types/Value.d.ts
 +++ b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/config/types/Value.d.ts
 @@ -34,7 +34,7 @@ export class Value<T extends Object> extends Object {
