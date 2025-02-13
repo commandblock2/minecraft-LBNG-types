@@ -1,31 +1,21 @@
-From 78f93dcb0904d306d6783257568e98506af5c059 Mon Sep 17 00:00:00 2001
+From 9a078fecb8814d0fcd16856257bae9e4ab13ccdd Mon Sep 17 00:00:00 2001
 From: commandblock2 <tony_hu@live.com>
-Date: Sun, 2 Feb 2025 19:07:32 +0800
+Date: Fri, 14 Feb 2025 00:24:31 +0800
 Subject: [PATCH] feat-module-registration-info
 
 ---
- .../liquidbounce/script/PolyglotScript.d.ts    | 18 ++++++++++++++----
- 1 file changed, 14 insertions(+), 4 deletions(-)
+ .../ccbluex/liquidbounce/script/PolyglotScript.d.ts | 13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
 
 diff --git a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts
-index 2d3ad9e..ba644cc 100644
+index e0a9f39..e70db91 100644
 --- a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts
 +++ b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts
-@@ -1,15 +1,25 @@
- import type { Object } from '../../../../java/lang/Object.d.ts'
- import type { File } from '../../../../java/io/File.d.ts'
- import type { ScriptDebugOptions } from '../../../../net/ccbluex/liquidbounce/script/ScriptDebugOptions.d.ts'
--import type { Context } from '../../../../org/graalvm/polyglot/Context.d.ts'
- import type { Function0 } from '../../../../kotlin/jvm/functions/Function0.d.ts'
- import type { Unit } from '../../../../kotlin/Unit.d.ts'
- import type { Choice } from '../../../../net/ccbluex/liquidbounce/config/types/Choice.d.ts'
--import type { Command } from '../../../../net/ccbluex/liquidbounce/features/command/Command.d.ts'
--import type { ClientModule } from '../../../../net/ccbluex/liquidbounce/features/module/ClientModule.d.ts'
+@@ -10,6 +10,17 @@ import type { ClientModule } from '../../../../net/ccbluex/liquidbounce/features
  import type { ChoiceConfigurable } from '../../../../net/ccbluex/liquidbounce/config/types/ChoiceConfigurable.d.ts'
  import type { Function1 } from '../../../../kotlin/jvm/functions/Function1.d.ts'
  import type { Value } from '../../../../org/graalvm/polyglot/Value.d.ts'
-+import { ScriptModule } from './bindings/features/ScriptModule.js'
-+
++import type { ScriptModule } from './bindings/features/ScriptModule.d.ts'
 +
 +interface ModuleObject {
 +    name: string;
@@ -36,11 +26,10 @@ index 2d3ad9e..ba644cc 100644
 +    };
 +}
 +
-+
  export class PolyglotScript extends Object {
      constructor(language: string, file: File, debugOptions: ScriptDebugOptions)
-     // private context: Context;
-@@ -33,5 +43,5 @@ export class PolyglotScript extends Object {
+     // private getContext(): Context;
+@@ -33,5 +44,5 @@ export class PolyglotScript extends Object {
      on(eventName: string, handler: Function0<Unit>): Unit;
      registerChoice(choiceConfigurable: ChoiceConfigurable<Choice>, choiceObject: { [key: string]: Object }, callback: Function1<Choice, Unit>): Unit;
      registerCommand(commandObject: Value): Unit;

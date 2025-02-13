@@ -1,6 +1,6 @@
-From afa0882072608b0f141392b6660d4274775eab77 Mon Sep 17 00:00:00 2001
+From ddebf1433abbe922f1b984157036a239582fc078 Mon Sep 17 00:00:00 2001
 From: commandblock2 <tony_hu@live.com>
-Date: Mon, 3 Feb 2025 22:37:19 +0800
+Date: Fri, 14 Feb 2025 01:03:37 +0800
 Subject: [PATCH] fix-script-value-get-value
 
 ---
@@ -8,10 +8,10 @@ Subject: [PATCH] fix-script-value-get-value
  1 file changed, 21 insertions(+), 10 deletions(-)
 
 diff --git a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/config/types/Value.d.ts b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/config/types/Value.d.ts
-index 2a25287..a88863f 100644
+index 669a829..f96ee3e 100644
 --- a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/config/types/Value.d.ts
 +++ b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/config/types/Value.d.ts
-@@ -37,7 +37,7 @@ export class Value<T extends Object> extends Object {
+@@ -34,7 +34,7 @@ export class Value<T extends Object> extends Object {
      doNotIncludeWhen(condition: Function0<boolean>): Value<T>;
      get(): T;
      // getValue(u: Object | null, property: KProperty<Object | null>): T;
@@ -20,7 +20,7 @@ index 2a25287..a88863f 100644
      independentDescription(): Value<T>;
      notAnOption(): Value<T>;
      onChange(listener: Function1<T, T>): Value<T>;
-@@ -48,18 +48,29 @@ export class Value<T extends Object> extends Object {
+@@ -45,18 +45,29 @@ export class Value<T extends Object> extends Object {
      setByString(string: string): Unit;
      // setValue(u: Object | null, property: KProperty<Object | null>, t: T): Unit;
      // setValue(t: Value): Result<Unit>;

@@ -2,21 +2,22 @@
 import fs from 'fs/promises'
 import path from 'path'
 import { execSync, spawnSync } from 'child_process'
-import { sanitizeCommitMessage, validateDirs } from './utils'
+import { initGitRepo, sanitizeCommitMessage, validateDirs } from './utils'
 import readline from 'readline'
 
 async function applyPatchesIterative(patchDir: string, workDir: string) {
     // Validate directories
     const { absolutePatchDir, absoluteWorkDir } = await validateDirs(patchDir, workDir)
 
-    // Check if working directory already contains a git repo
     const hasGitRepo = await fs.access(path.join(absoluteWorkDir, '.git'))
         .then(() => true)
         .catch(() => false)
 
-    if (!hasGitRepo) {
-        throw new Error('Working directory must already contain a git repository initialized by apply-patches.ts')
+    if (hasGitRepo) {
+        throw new Error('Working directory already contains a git repository')
     }
+
+    await initGitRepo(absoluteWorkDir)
 
     // Get all patch files sorted
     const patches = (await fs.readdir(absolutePatchDir))
@@ -51,7 +52,7 @@ async function applyPatchesIterative(patchDir: string, workDir: string) {
             
             // Try to apply the patch
             try {
-                execSync(`git apply --index "${patchPath}"`, { cwd: absoluteWorkDir })
+                execSync(`git apply --index --whitespace=fix "${patchPath}"`, { cwd: absoluteWorkDir })
                 execSync(`git commit -m "${sanitizedMessage}"`, { 
                     cwd: absoluteWorkDir,
                     encoding: 'utf-8'
@@ -59,7 +60,7 @@ async function applyPatchesIterative(patchDir: string, workDir: string) {
                 console.log(`Successfully applied: ${patch}`)
             } catch (error) {
                 console.error(`Failed to apply patch: ${patch}`)
-                console.error(error.message)
+                console.error(error)
                 
                 const answer = await askQuestion(
                     'Patch failed to apply. Options:\n' +
@@ -67,7 +68,7 @@ async function applyPatchesIterative(patchDir: string, workDir: string) {
                     '  [a]bort - Abort the process\n' +
                     '  [f]ix - Open shell for manual fixing (exit shell when done)\n' +
                     'Choose an option (s/a/f): '
-                )
+                )            
                 
                 if (answer.toLowerCase() === 'a') {
                     console.log('Aborting patch application process')

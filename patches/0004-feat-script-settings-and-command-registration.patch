@@ -1,29 +1,29 @@
-From 474dbd7730a4bc6f8ac8b455ad29c6f187f54db7 Mon Sep 17 00:00:00 2001
+From 80f2313aaaf1fef02431828f7f2ce41fd349c610 Mon Sep 17 00:00:00 2001
 From: commandblock2 <tony_hu@live.com>
-Date: Sun, 2 Feb 2025 19:07:32 +0800
+Date: Fri, 14 Feb 2025 00:31:50 +0800
 Subject: [PATCH] feat-script-settings-and-command-registration
 
 ---
- .../liquidbounce/script/PolyglotScript.d.ts   | 21 +++++-
- .../bindings/features/ScriptSetting.d.ts      | 75 ++++++++++++++++---
- 2 files changed, 82 insertions(+), 14 deletions(-)
+ .../liquidbounce/script/PolyglotScript.d.ts   | 27 +++++--
+ .../bindings/features/ScriptSetting.d.ts      | 74 +++++++++++++++----
+ 2 files changed, 83 insertions(+), 18 deletions(-)
 
 diff --git a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts
-index ba644cc..a8e6b5b 100644
+index e70db91..c82dff5 100644
 --- a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts
 +++ b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts
-@@ -6,8 +6,9 @@ import type { Unit } from '../../../../kotlin/Unit.d.ts'
- import type { Choice } from '../../../../net/ccbluex/liquidbounce/config/types/Choice.d.ts'
+@@ -9,18 +9,34 @@ import type { Command } from '../../../../net/ccbluex/liquidbounce/features/comm
+ import type { ClientModule } from '../../../../net/ccbluex/liquidbounce/features/module/ClientModule.d.ts'
  import type { ChoiceConfigurable } from '../../../../net/ccbluex/liquidbounce/config/types/ChoiceConfigurable.d.ts'
  import type { Function1 } from '../../../../kotlin/jvm/functions/Function1.d.ts'
 -import type { Value } from '../../../../org/graalvm/polyglot/Value.d.ts'
- import { ScriptModule } from './bindings/features/ScriptModule.js'
+-import type { ScriptModule } from './bindings/features/ScriptModule.d.ts'
++import { ScriptModule } from './bindings/features/ScriptModule.js'
 +import { Value } from '../config/types/Value.js'
 +import { Value as PolyglotValue } from 'org/graalvm/polyglot/Value.js'
  
- 
  interface ModuleObject {
-@@ -15,10 +16,24 @@ interface ModuleObject {
+     name: string;
      category: string;
      description: string;
      settings?: {
@@ -46,20 +46,23 @@ index ba644cc..a8e6b5b 100644
 +    subcommands?: CommandObject[];
 +    hub?: boolean;
 +}
- 
++
  export class PolyglotScript extends Object {
      constructor(language: string, file: File, debugOptions: ScriptDebugOptions)
-@@ -42,6 +57,6 @@ export class PolyglotScript extends Object {
+     // private getContext(): Context;
+@@ -43,6 +59,7 @@ export class PolyglotScript extends Object {
      initScript(): Unit;
      on(eventName: string, handler: Function0<Unit>): Unit;
      registerChoice(choiceConfigurable: ChoiceConfigurable<Choice>, choiceObject: { [key: string]: Object }, callback: Function1<Choice, Unit>): Unit;
 -    registerCommand(commandObject: Value): Unit;
++
 +    registerCommand(commandObject: CommandObject): Unit;
      registerModule(moduleObject: ModuleObject, callback: (module: ScriptModule) => void): Unit;
- }
+-}
 \ No newline at end of file
++}
 diff --git a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting.d.ts b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting.d.ts
-index f67b6a1..d49d35d 100644
+index f67b6a1..ab81847 100644
 --- a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting.d.ts
 +++ b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting.d.ts
 @@ -1,5 +1,4 @@
@@ -68,11 +71,10 @@ index f67b6a1..d49d35d 100644
  import type { Value } from '../../../../../../net/ccbluex/liquidbounce/config/types/Value.d.ts'
  import type { ChooseListValue } from '../../../../../../net/ccbluex/liquidbounce/config/types/ChooseListValue.d.ts'
  import type { NamedChoice } from '../../../../../../net/ccbluex/liquidbounce/config/types/NamedChoice.d.ts'
-@@ -9,17 +8,71 @@ import type { InputUtil$Key } from '../../../../../../net/minecraft/client/util/
+@@ -9,17 +8,66 @@ import type { InputUtil$Key } from '../../../../../../net/minecraft/client/util/
  import type { ClosedRange } from '../../../../../../kotlin/ranges/ClosedRange.d.ts'
  import type { ValueType } from '../../../../../../net/ccbluex/liquidbounce/config/types/ValueType.d.ts'
  import type { ListValueType } from '../../../../../../net/ccbluex/liquidbounce/config/types/ListValueType.d.ts'
-+
 +
 +interface BaseValue {
 +    name: string;
@@ -132,6 +134,12 @@ index f67b6a1..d49d35d 100644
 -    int(value: Value): RangedValue<number>;
 -    intRange(value: Value): RangedValue<(Object | null)[]>;
 -    key(value: Value): Value<InputUtil$Key>;
+-    // private rangedValue(name: string, default: T, range: ClosedRange<Object | null>, suffix: string, valueType: ValueType): RangedValue<T>;
+-    text(value: Value): Value<string>;
+-    textArray(value: Value): Value<string[]>;
+-    // private value(name: string, default: T, valueType: ValueType, listType: ListValueType): Value<T>;
+-}
+\ No newline at end of file
 +    
 +    boolean(value: BooleanValue): Value<boolean>;
 +    choose(value: ChooseValue): ChooseListValue<NamedChoice>;
@@ -139,18 +147,10 @@ index f67b6a1..d49d35d 100644
 +    floatRange(value: FloatRangeValue): RangedValue<ClosedFloatingPointRange<number>>;
 +    int(value: IntValue): RangedValue<number>;
 +    intRange(value: IntRangeValue): RangedValue<(Object | null)[]>;
-+    key(value: KeyValue): Value<InputUtil$Key>;
-     // private rangedValue(name: string, default: T, range: ClosedRange<Object | null>, suffix: string, valueType: ValueType): RangedValue<T>;
--    text(value: Value): Value<string>;
--    textArray(value: Value): Value<string[]>;
-+
-+    text(value: TextView): Value<string>;
++    key(value: KeyValue): Value<InputUtil$Key>;    text(value: TextView): Value<string>;
 +    textArray(value: TextArrayValue): Value<string[]>;
-     // private value(name: string, default: T, valueType: ValueType, listType: ListValueType): Value<T>;
--}
-\ No newline at end of file
++    // ... existing code ...
 +}
-+
 -- 
 2.47.1
 

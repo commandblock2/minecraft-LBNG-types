@@ -107,8 +107,8 @@ Now you can find a `types-gen` folder in your script folder, this contains the g
 
 1. Run `npm install` in this directory.
 2. copy the generated folder `types-gen` to `generated-modules` folder in the root of your project.
-3. Run `npm install file:./generated-modules/types-gen/minecraft-yarn-definitions/ --no-save`, no-save for now, not sure if I should do this.
-4. Run the script `apply-patch` with `npm run apply-patches`
+3. Run the script `apply-patch` with `npm run apply-patches`
+4. Run `npm install file:./generated-modules/types-gen/minecraft-yarn-definitions/ --no-save`, no-save for now, not sure if I should do this.
 5. Open the `template.ts` file and try start writing your script, you should see TypeScript type hints for all the classes that are available. vscode will automatically generate working imports, but **you should not touch the import statement with `@embedded` namespace.**
 6. Run the script `compile` with npm like step 4
 7. Corresponding javascript file is generated in the `dist` directory, you can link this dist directory to your scripts directory in LB.
