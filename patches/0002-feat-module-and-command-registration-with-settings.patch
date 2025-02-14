@@ -1,0 +1,238 @@
+From 4dfee3b0676b9c3c79cf4bfe7cd529cb7cad74f4 Mon Sep 17 00:00:00 2001
+From: commandblock2 <tony_hu@live.com>
+Date: Sat, 15 Feb 2025 00:43:34 +0800
+Subject: [PATCH] feat: module and command registration with settings fixed
+
+---
+ .../liquidbounce/config/types/Value.d.ts      | 26 ++++++-
+ .../script/PolyglotScript$RegisterScript.d.ts | 12 ++-
+ .../liquidbounce/script/PolyglotScript.d.ts   | 43 ++++++++++-
+ .../bindings/features/ScriptSetting.d.ts      | 74 +++++++++++++++----
+ 4 files changed, 132 insertions(+), 23 deletions(-)
+
+diff --git a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/config/types/Value.d.ts b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/config/types/Value.d.ts
+index 0a3fe77..3cf6be6 100644
+--- a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/config/types/Value.d.ts
++++ b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/config/types/Value.d.ts
+@@ -10,6 +10,11 @@ import type { Function0 } from '../../../../../kotlin/jvm/functions/Function0.d.
+ import type { KProperty } from '../../../../../kotlin/reflect/KProperty.d.ts'
+ import type { Value } from '../../../../../org/graalvm/polyglot/Value.d.ts'
+ import type { Result } from '../../../../../kotlin/Result.d.ts'
++
++import type { ClosedFloatingPointRange } from '../../../../../kotlin/ranges/ClosedFloatingPointRange.d.ts'
++import type { InputUtil$Key } from '../../../../../net/minecraft/client/util/InputUtil$Key.d.ts'
++import type { NamedChoice } from './NamedChoice.d.ts'
++
+ export class Value<T extends Object> extends Object {
+     constructor(name: string, defaultValue: T, valueType: ValueType, listType: ListValueType, independentDescription: boolean)
+     // private changedListeners: Function1<T, Unit>[];
+@@ -31,8 +36,8 @@ export class Value<T extends Object> extends Object {
+     doNotIncludeAlways(): Value<T>;
+     doNotIncludeWhen(condition: Function0<boolean>): Value<T>;
+     get(): T;
+-    getValue(u: Object | null, property: KProperty<Object | null>): T;
+-    getValue(): Object;
++    // getValue(u: Object | null, property: KProperty<Object | null>): T;
++    getValue(): T;
+     independentDescription(): Value<T>;
+     notAnOption(): Value<T>;
+     onChange(listener: Function1<T, T>): Value<T>;
+@@ -41,7 +46,20 @@ export class Value<T extends Object> extends Object {
+     set(t: T): Unit;
+     set(t: T, apply: Function1<T, Unit>): Unit;
+     setByString(string: string): Unit;
+-    setValue(u: Object | null, property: KProperty<Object | null>, t: T): Unit;
+-    setValue(t: Value): Result<Unit>;
++    // setValue(u: Object | null, property: KProperty<Object | null>, t: T): Unit;
++    // setValue(t: Value): Result<Unit>;
++    setValue(value: T): Unit;
+     type(): ValueType;
++
++    getValue(): T extends ClosedFloatingPointRange<number> ? number[] : T;
++    setValue(value: T extends ClosedFloatingPointRange<number> ? number[] | T : T): Unit;
++
++    // Special case for key values
++    getValue(): T extends InputUtil$Key ? string : T;
++    setValue(value: T extends InputUtil$Key ? string | T : T): Unit;
++
++    // Special case for named choices
++    getValue(): T extends NamedChoice ? string : T;
++    setValue(value: T extends NamedChoice ? string | T : T): Unit;
++
+ }
+\ No newline at end of file
+diff --git a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript$RegisterScript.d.ts b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript$RegisterScript.d.ts
+index c6a30ed..f1ed2a6 100644
+--- a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript$RegisterScript.d.ts
++++ b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript$RegisterScript.d.ts
+@@ -1,7 +1,15 @@
+ import type { Object } from '../../../../java/lang/Object.d.ts'
+ import type { Function } from '../../../../java/util/function/Function.d.ts'
+ import type { PolyglotScript } from '../../../../net/ccbluex/liquidbounce/script/PolyglotScript.d.ts'
+-export class PolyglotScript$RegisterScript extends Object implements Function<{ [key: string]: Object }, PolyglotScript> {
++
++type ScriptInfo = {
++    name: string;
++    version: string;
++    authors: string[];
++};
++
++export class PolyglotScript$RegisterScript extends Object implements Function<ScriptInfo, PolyglotScript> {
+     constructor(null: PolyglotScript$RegisterScript)
+-    apply(scriptObject: { [key: string]: Object }): PolyglotScript;
++
++    apply(scriptObject: ScriptInfo): PolyglotScript;
+ }
+\ No newline at end of file
+diff --git a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts
+index 2d3ad9e..4b8eea3 100644
+--- a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts
++++ b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts
+@@ -9,7 +9,38 @@ import type { Command } from '../../../../net/ccbluex/liquidbounce/features/comm
+ import type { ClientModule } from '../../../../net/ccbluex/liquidbounce/features/module/ClientModule.d.ts'
+ import type { ChoiceConfigurable } from '../../../../net/ccbluex/liquidbounce/config/types/ChoiceConfigurable.d.ts'
+ import type { Function1 } from '../../../../kotlin/jvm/functions/Function1.d.ts'
+-import type { Value } from '../../../../org/graalvm/polyglot/Value.d.ts'
++
++import type { ScriptModule } from './bindings/features/ScriptModule.d.ts'
++import type { Value } from '../config/types/Value.d.ts'
++import type { Value as PolyglotValue } from 'org/graalvm/polyglot/Value.d.ts'
++
++
++type SettingsToValues<T> = {
++        [K in keyof T]: T[K] extends Value<any> ? T[K] : never;
++}
++
++interface ModuleObject<TSettings = any> {
++    name: string;
++    category: string;
++    description: string;
++    settings?: TSettings
++}
++
++interface CommandObject {
++    name: string;
++    aliases?: string[];
++    parameters?: Array<{
++        name: string,
++        required?: boolean,
++        validate?: (str: string) => PolyglotValue,
++        vararg?: boolean,
++        getCompletions?: (begin: string, args: any[]) => string[]
++    }>;
++    onExecute: (...parameters: any[]) => void,
++    subcommands?: CommandObject[];
++    hub?: boolean;
++}
++
+ export class PolyglotScript extends Object {
+     constructor(language: string, file: File, debugOptions: ScriptDebugOptions)
+     // private context: Context;
+@@ -32,6 +63,10 @@ export class PolyglotScript extends Object {
+     initScript(): Unit;
+     on(eventName: string, handler: Function0<Unit>): Unit;
+     registerChoice(choiceConfigurable: ChoiceConfigurable<Choice>, choiceObject: { [key: string]: Object }, callback: Function1<Choice, Unit>): Unit;
+-    registerCommand(commandObject: Value): Unit;
+-    registerModule(moduleObject: { [key: string]: Object }, callback: Function1<ClientModule, Unit>): Unit;
+-}
+\ No newline at end of file
++
++    registerCommand(commandObject: CommandObject): Unit;
++    registerModule<TSettings>(
++                moduleObject: ModuleObject<TSettings>, 
++                callback: (module: ScriptModule & { settings: SettingsToValues<TSettings> }) => void
++    ): Unit;
++}
+diff --git a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting.d.ts b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting.d.ts
+index f67b6a1..11ab65e 100644
+--- a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting.d.ts
++++ b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting.d.ts
+@@ -1,5 +1,4 @@
+ import type { Object } from '../../../../../../java/lang/Object.d.ts'
+-import type { Value } from '../../../../../../org/graalvm/polyglot/Value.d.ts'
+ import type { Value } from '../../../../../../net/ccbluex/liquidbounce/config/types/Value.d.ts'
+ import type { ChooseListValue } from '../../../../../../net/ccbluex/liquidbounce/config/types/ChooseListValue.d.ts'
+ import type { NamedChoice } from '../../../../../../net/ccbluex/liquidbounce/config/types/NamedChoice.d.ts'
+@@ -9,17 +8,66 @@ import type { InputUtil$Key } from '../../../../../../net/minecraft/client/util/
+ import type { ClosedRange } from '../../../../../../kotlin/ranges/ClosedRange.d.ts'
+ import type { ValueType } from '../../../../../../net/ccbluex/liquidbounce/config/types/ValueType.d.ts'
+ import type { ListValueType } from '../../../../../../net/ccbluex/liquidbounce/config/types/ListValueType.d.ts'
++
++interface BaseValue {
++    name: string;
++}
++
++interface BooleanValue extends BaseValue {
++    default: boolean;
++}
++
++interface ChooseValue extends BaseValue {
++    default: string;
++    choices: string[];
++}
++
++interface FloatValue extends BaseValue {
++    default: number;
++    range: [number, number];
++    suffix?: string;
++}
++
++interface FloatRangeValue extends BaseValue {
++    default: [number, number];
++    range: [number, number];
++    suffix?: string;
++}
++
++interface IntValue extends BaseValue {
++    default: number;
++    range: [number, number];
++    suffix?: string;
++}
++
++interface IntRangeValue extends BaseValue {
++    default: [number, number];
++    range: [number, number];
++    suffix?: string;
++}
++
++interface KeyValue extends BaseValue {
++    default: string;
++}
++
++interface TextView extends BaseValue {
++    default: string;
++}
++
++interface TextArrayValue extends BaseValue {
++    default: string[];
++}
++
+ export class ScriptSetting extends Object {
+     static INSTANCE: ScriptSetting;
+-    boolean(value: Value): Value<boolean>;
+-    choose(value: Value): ChooseListValue<NamedChoice>;
+-    float(value: Value): RangedValue<number>;
+-    floatRange(value: Value): RangedValue<ClosedFloatingPointRange<number>>;
+-    int(value: Value): RangedValue<number>;
+-    intRange(value: Value): RangedValue<(Object | null)[]>;
+-    key(value: Value): Value<InputUtil$Key>;
+-    // private rangedValue(name: string, default: T, range: ClosedRange<Object | null>, suffix: string, valueType: ValueType): RangedValue<T>;
+-    text(value: Value): Value<string>;
+-    textArray(value: Value): Value<string[]>;
+-    // private value(name: string, default: T, valueType: ValueType, listType: ListValueType): Value<T>;
+-}
+\ No newline at end of file
++    
++    boolean(value: BooleanValue): Value<boolean>;
++    choose(value: ChooseValue): ChooseListValue<NamedChoice>;
++    float(value: FloatValue): RangedValue<number>;
++    floatRange(value: FloatRangeValue): RangedValue<ClosedFloatingPointRange<number>>;
++    int(value: IntValue): RangedValue<number>;
++    intRange(value: IntRangeValue): RangedValue<number[]>;
++    key(value: KeyValue): Value<InputUtil$Key>;    text(value: TextView): Value<string>;
++    textArray(value: TextArrayValue): Value<string[]>;
++    // ... existing code ...
++}
+-- 
+2.47.1
+

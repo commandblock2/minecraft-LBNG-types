@@ -1,6 +1,6 @@
-From 2d817e6245d8ec3f0706798912f46f5bed60249b Mon Sep 17 00:00:00 2001
+From 17aa3f90b08df65e94b3b4c20725cb69e3337685 Mon Sep 17 00:00:00 2001
 From: commandblock2 <tony_hu@live.com>
-Date: Fri, 14 Feb 2025 02:21:16 +0800
+Date: Sat, 15 Feb 2025 00:43:34 +0800
 Subject: [PATCH] feat-full-event-definitions
 
 ---
@@ -8,7 +8,7 @@ Subject: [PATCH] feat-full-event-definitions
  1 file changed, 222 insertions(+)
 
 diff --git a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule.d.ts b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule.d.ts
-index 92b2035..610607a 100644
+index 83cf19c..c92fb76 100644
 --- a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule.d.ts
 +++ b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule.d.ts
 @@ -17,6 +17,117 @@ import type { PolyglotScript } from '../../../../../../net/ccbluex/liquidbounce/
