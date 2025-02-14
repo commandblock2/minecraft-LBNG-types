@@ -73,7 +73,7 @@ script.registerModule(
     (mod) => {
         mod.on("enable", (event) => {
             const loader = createClassLoaderFromJar(
-                mod.settings.path.value + "/ts-generator-1.0.1.jar"
+                mod.settings.path.value + "/ts-generator-1.0.3.jar"
             );
             const NPMGen = loadClassFromJar(
                 loader,
