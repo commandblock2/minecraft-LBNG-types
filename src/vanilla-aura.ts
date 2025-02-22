@@ -110,7 +110,7 @@ script.registerModule({
 
             const hand = mc.player?.activeHand
 
-            mc.interactionManager.interactItem(mc.player, hand)
+            mc.interactionManager?.interactItem(mc.player, hand)
         }
     })
 
@@ -122,7 +122,7 @@ script.registerModule({
 
         if (event.packet instanceof PlayerActionC2SPacket
             && event.packet.action == PlayerActionC2SPacket$Action.RELEASE_USE_ITEM
-            && stack.item?.getUseAction(stack) == UseAction.BLOCK)
+            && stack && stack.item?.getUseAction(stack) == UseAction.BLOCK)
             event.cancelEvent()
 
         packetThisTick++;
