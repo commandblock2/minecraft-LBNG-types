@@ -23,7 +23,9 @@ import {
 } from "@embedded";
 import { TransferOrigin } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/event/events/TransferOrigin";
 import { ClientPlayerInteractionManager } from "@minecraft-yarn-definitions/types/net/minecraft/client/network/ClientPlayerInteractionManager";
+import { Entity } from "@minecraft-yarn-definitions/types/net/minecraft/entity/Entity";
 import { LivingEntity } from "@minecraft-yarn-definitions/types/net/minecraft/entity/LivingEntity";
+import { PlayerEntity } from "@minecraft-yarn-definitions/types/net/minecraft/entity/player/PlayerEntity";
 import { UseAction } from "@minecraft-yarn-definitions/types/net/minecraft/item/consume/UseAction";
 import { PlayerActionC2SPacket } from "@minecraft-yarn-definitions/types/net/minecraft/network/packet/c2s/play/PlayerActionC2SPacket";
 import { PlayerActionC2SPacket$Action } from "@minecraft-yarn-definitions/types/net/minecraft/network/packet/c2s/play/PlayerActionC2SPacket$Action";
@@ -87,7 +89,7 @@ script.registerModule({
         available -= entityList.length
 
         entityList.slice(0, originallyAvailable).forEach((entity: LivingEntity): void => {
-            mc.getNetworkHandler()?.sendPacket(PlayerInteractEntityC2SPacket.attack(entity, false))
+            mc.getNetworkHandler()?.sendPacket(PlayerInteractEntityC2SPacket.attack(entity as unknown as Entity, false))
         })
 
         entityList = entityList.slice(originallyAvailable, entityList.length)
@@ -102,15 +104,30 @@ script.registerModule({
                 return entity.hurtTime < mod.settings.hurtTime.get()
             })
                 .filter((entity) => {
-                    return entity.distanceTo(mc.player) < mod.settings.range.get()
+                    return entity.distanceTo(mc.player as unknown as Entity ) < mod.settings.range.get()
                 })
                 .filter((entity) => {
-                    return entity != mc.player
+                    return entity != (mc.player as unknown as LivingEntity)
                 })
+
+            if (!mc.player)
+                return
 
             const hand = mc.player?.activeHand
 
-            mc.interactionManager?.interactItem(mc.player, hand)
+            /*
+            Argument of type 'ClientPlayerEntity' is not assignable to parameter of type 'PlayerEntity'.
+            Types of property 'isSubmergedInWater' are incompatible.
+            Type '() => boolean' is not assignable to type 'boolean'.ts(2345)
+
+            This is might not be solvable, ts thinks that a function is not supposed to have the same name as a property.
+            here for the isSubmergedInWater identifier,
+            it is a function in ClientPlayerEntity, but a boolean property in PlayerEntity.
+            so ts thinks that ClientPlayerEntity does not provide the isSubmergedInWater property, 
+            because it was identified as a function.
+            
+            */
+            mc.interactionManager?.interactItem(mc.player as unknown as PlayerEntity, hand)
         }
     })
 

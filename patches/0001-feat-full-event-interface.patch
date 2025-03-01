@@ -1,14 +1,14 @@
-From 17aa3f90b08df65e94b3b4c20725cb69e3337685 Mon Sep 17 00:00:00 2001
+From 6b3b18f3778af17a65eaf6d09af3530728220e75 Mon Sep 17 00:00:00 2001
 From: commandblock2 <tony_hu@live.com>
-Date: Sat, 15 Feb 2025 00:43:34 +0800
-Subject: [PATCH] feat-full-event-definitions
+Date: Sun, 2 Mar 2025 02:37:25 +0800
+Subject: [PATCH] feat: full event interface
 
 ---
  .../bindings/features/ScriptModule.d.ts       | 222 ++++++++++++++++++
  1 file changed, 222 insertions(+)
 
 diff --git a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule.d.ts b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule.d.ts
-index 83cf19c..c92fb76 100644
+index 3bdafbb..e84e5a2 100644
 --- a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule.d.ts
 +++ b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule.d.ts
 @@ -17,6 +17,117 @@ import type { PolyglotScript } from '../../../../../../net/ccbluex/liquidbounce/
@@ -132,7 +132,7 @@ index 83cf19c..c92fb76 100644
 @@ -45,4 +156,115 @@ export class ScriptModule extends ClientModule {
      enable(): Unit;
      // private hookHandler(eventName: string): Unit;
-     on(eventName: string, handler: Function1<Object | null, Unit>): Unit;
+     on(eventName: string, handler: Function1<Object, Unit>): Unit;
 +
 +    on(eventName: "enable" | "disable", handler: () => void): Unit;
 +

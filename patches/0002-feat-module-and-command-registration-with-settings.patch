@@ -1,71 +1,67 @@
-From 4dfee3b0676b9c3c79cf4bfe7cd529cb7cad74f4 Mon Sep 17 00:00:00 2001
+From 98c179e2b86e5413afd82e8eeee9571aa1468b0b Mon Sep 17 00:00:00 2001
 From: commandblock2 <tony_hu@live.com>
-Date: Sat, 15 Feb 2025 00:43:34 +0800
+Date: Sun, 2 Mar 2025 02:46:13 +0800
 Subject: [PATCH] feat: module and command registration with settings fixed
 
 ---
- .../liquidbounce/config/types/Value.d.ts      | 26 ++++++-
- .../script/PolyglotScript$RegisterScript.d.ts | 12 ++-
- .../liquidbounce/script/PolyglotScript.d.ts   | 43 ++++++++++-
- .../bindings/features/ScriptSetting.d.ts      | 74 +++++++++++++++----
- 4 files changed, 132 insertions(+), 23 deletions(-)
+ .../liquidbounce/config/types/Value.d.ts      | 21 ++++--
+ .../script/PolyglotScript$RegisterScript.d.ts | 15 +++-
+ .../liquidbounce/script/PolyglotScript.d.ts   | 43 ++++++++++--
+ .../bindings/features/ScriptSetting.d.ts      | 70 +++++++++++++++----
+ 4 files changed, 125 insertions(+), 24 deletions(-)
 
 diff --git a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/config/types/Value.d.ts b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/config/types/Value.d.ts
-index 0a3fe77..3cf6be6 100644
+index b1b660a..f78833e 100644
 --- a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/config/types/Value.d.ts
 +++ b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/config/types/Value.d.ts
-@@ -10,6 +10,11 @@ import type { Function0 } from '../../../../../kotlin/jvm/functions/Function0.d.
+@@ -8,8 +8,13 @@ import type { Gson } from '../../../../../com/google/gson/Gson.d.ts'
+ import type { JsonElement } from '../../../../../com/google/gson/JsonElement.d.ts'
+ import type { Function0 } from '../../../../../kotlin/jvm/functions/Function0.d.ts'
  import type { KProperty } from '../../../../../kotlin/reflect/KProperty.d.ts'
- import type { Value } from '../../../../../org/graalvm/polyglot/Value.d.ts'
+-import type { Value } from '../../../../../org/graalvm/polyglot/Value.d.ts'
++
  import type { Result } from '../../../../../kotlin/Result.d.ts'
 +
 +import type { ClosedFloatingPointRange } from '../../../../../kotlin/ranges/ClosedFloatingPointRange.d.ts'
 +import type { InputUtil$Key } from '../../../../../net/minecraft/client/util/InputUtil$Key.d.ts'
 +import type { NamedChoice } from './NamedChoice.d.ts'
 +
- export class Value<T extends Object> extends Object {
-     constructor(name: string, defaultValue: T, valueType: ValueType, listType: ListValueType, independentDescription: boolean)
-     // private changedListeners: Function1<T, Unit>[];
-@@ -31,8 +36,8 @@ export class Value<T extends Object> extends Object {
+ export class Value<T extends Object | number | string | boolean> extends Object {
+     constructor(name: string, aliases: string[], defaultValue: T, valueType: ValueType, listType: ListValueType, independentDescription: boolean)
+     readonly aliases: string[];
+@@ -32,8 +37,6 @@ export class Value<T extends Object | number | string | boolean> extends Object
      doNotIncludeAlways(): Value<T>;
      doNotIncludeWhen(condition: Function0<boolean>): Value<T>;
      get(): T;
--    getValue(u: Object | null, property: KProperty<Object | null>): T;
+-    getValue(u: Object | null, property: KProperty<Object>): T;
 -    getValue(): Object;
-+    // getValue(u: Object | null, property: KProperty<Object | null>): T;
-+    getValue(): T;
      independentDescription(): Value<T>;
      notAnOption(): Value<T>;
      onChange(listener: Function1<T, T>): Value<T>;
-@@ -41,7 +46,20 @@ export class Value<T extends Object> extends Object {
+@@ -42,7 +45,15 @@ export class Value<T extends Object | number | string | boolean> extends Object
      set(t: T): Unit;
      set(t: T, apply: Function1<T, Unit>): Unit;
      setByString(string: string): Unit;
--    setValue(u: Object | null, property: KProperty<Object | null>, t: T): Unit;
+-    setValue(u: Object | null, property: KProperty<Object>, t: T): Unit;
 -    setValue(t: Value): Result<Unit>;
-+    // setValue(u: Object | null, property: KProperty<Object | null>, t: T): Unit;
-+    // setValue(t: Value): Result<Unit>;
-+    setValue(value: T): Unit;
      type(): ValueType;
 +
-+    getValue(): T extends ClosedFloatingPointRange<number> ? number[] : T;
-+    setValue(value: T extends ClosedFloatingPointRange<number> ? number[] | T : T): Unit;
++    getValue(): T extends ClosedFloatingPointRange<number> ? number[] :
++            T extends InputUtil$Key ? string :
++            T extends NamedChoice ? string :
++            T;
 +
-+    // Special case for key values
-+    getValue(): T extends InputUtil$Key ? string : T;
-+    setValue(value: T extends InputUtil$Key ? string | T : T): Unit;
-+
-+    // Special case for named choices
-+    getValue(): T extends NamedChoice ? string : T;
-+    setValue(value: T extends NamedChoice ? string | T : T): Unit;
-+
++    setValue(value: T |
++            (T extends ClosedFloatingPointRange<number> ? number[] : never) |
++            (T extends InputUtil$Key ? string : never) |
++            (T extends NamedChoice ? string : never)): Unit;
  }
 \ No newline at end of file
 diff --git a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript$RegisterScript.d.ts b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript$RegisterScript.d.ts
-index c6a30ed..f1ed2a6 100644
+index 8625b71..0010274 100644
 --- a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript$RegisterScript.d.ts
 +++ b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript$RegisterScript.d.ts
-@@ -1,7 +1,15 @@
+@@ -1,10 +1,19 @@
  import type { Object } from '../../../../java/lang/Object.d.ts'
  import type { Function } from '../../../../java/util/function/Function.d.ts'
  import type { PolyglotScript } from '../../../../net/ccbluex/liquidbounce/script/PolyglotScript.d.ts'
@@ -78,14 +74,19 @@ index c6a30ed..f1ed2a6 100644
 +};
 +
 +export class PolyglotScript$RegisterScript extends Object implements Function<ScriptInfo, PolyglotScript> {
-     constructor(null: PolyglotScript$RegisterScript)
+     static identity(): (param0: Object | null) => Object | null;
+-    constructor(null: PolyglotScript$RegisterScript)
 -    apply(scriptObject: { [key: string]: Object }): PolyglotScript;
-+
++    constructor(null_: PolyglotScript$RegisterScript)
 +    apply(scriptObject: ScriptInfo): PolyglotScript;
++    // fuck me but yeah idk how graaljs works with compose or andThen so let's just leave it as is for now
++    // this probably means there must be a siginficant refactor or rewrite of the ts-generator to support this and ofc others
+     compose(arg0: (param0: V) => T): (param0: V) => R;
+     andThen(arg0: (param0: R) => V): (param0: T) => V;
  }
 \ No newline at end of file
 diff --git a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts
-index 2d3ad9e..4b8eea3 100644
+index 9c577c1..7373b77 100644
 --- a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts
 +++ b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts
 @@ -9,7 +9,38 @@ import type { Command } from '../../../../net/ccbluex/liquidbounce/features/comm
@@ -144,7 +145,7 @@ index 2d3ad9e..4b8eea3 100644
 +    ): Unit;
 +}
 diff --git a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting.d.ts b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting.d.ts
-index f67b6a1..11ab65e 100644
+index 00af2c3..aac7442 100644
 --- a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting.d.ts
 +++ b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting.d.ts
 @@ -1,5 +1,4 @@
@@ -153,7 +154,7 @@ index f67b6a1..11ab65e 100644
  import type { Value } from '../../../../../../net/ccbluex/liquidbounce/config/types/Value.d.ts'
  import type { ChooseListValue } from '../../../../../../net/ccbluex/liquidbounce/config/types/ChooseListValue.d.ts'
  import type { NamedChoice } from '../../../../../../net/ccbluex/liquidbounce/config/types/NamedChoice.d.ts'
-@@ -9,17 +8,66 @@ import type { InputUtil$Key } from '../../../../../../net/minecraft/client/util/
+@@ -9,17 +8,64 @@ import type { InputUtil$Key } from '../../../../../../net/minecraft/client/util/
  import type { ClosedRange } from '../../../../../../kotlin/ranges/ClosedRange.d.ts'
  import type { ValueType } from '../../../../../../net/ccbluex/liquidbounce/config/types/ValueType.d.ts'
  import type { ListValueType } from '../../../../../../net/ccbluex/liquidbounce/config/types/ListValueType.d.ts'
@@ -216,13 +217,10 @@ index f67b6a1..11ab65e 100644
 -    int(value: Value): RangedValue<number>;
 -    intRange(value: Value): RangedValue<(Object | null)[]>;
 -    key(value: Value): Value<InputUtil$Key>;
--    // private rangedValue(name: string, default: T, range: ClosedRange<Object | null>, suffix: string, valueType: ValueType): RangedValue<T>;
+-    // private rangedValue<T extends Object | number | string | boolean>(name: string, default: T, range: ClosedRange<Object>, suffix: string, valueType: ValueType): RangedValue<T>;
 -    text(value: Value): Value<string>;
 -    textArray(value: Value): Value<string[]>;
--    // private value(name: string, default: T, valueType: ValueType, listType: ListValueType): Value<T>;
--}
-\ No newline at end of file
-+    
+-    // private value<T extends Object | number | string | boolean>(name: string, default: T, valueType: ValueType, listType: ListValueType): Value<T>;
 +    boolean(value: BooleanValue): Value<boolean>;
 +    choose(value: ChooseValue): ChooseListValue<NamedChoice>;
 +    float(value: FloatValue): RangedValue<number>;
@@ -231,8 +229,8 @@ index f67b6a1..11ab65e 100644
 +    intRange(value: IntRangeValue): RangedValue<number[]>;
 +    key(value: KeyValue): Value<InputUtil$Key>;    text(value: TextView): Value<string>;
 +    textArray(value: TextArrayValue): Value<string[]>;
-+    // ... existing code ...
-+}
+ }
+\ No newline at end of file
 -- 
 2.47.1
 
