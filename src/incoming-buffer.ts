@@ -39,12 +39,12 @@ const script = registerScript.apply({
 script.registerModule({
     name: "input-packet-delay",
     description: "Delay incoming packet by some ticks, might not work as expected",
-    category: "Combat",
+    category: "Exploit",
     settings: {
         bufferTicks: Setting.int({
             name: "bufferTicks",
             default: 5,
-            range: [1, 20]
+            range: [1, 200]
         })
     }
 }, (mod) => {
