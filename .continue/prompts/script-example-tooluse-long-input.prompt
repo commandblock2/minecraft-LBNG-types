@@ -1,0 +1,62 @@
+# This is an example ".prompt" file
+# It is used to define and reuse prompts within Continue
+# Each .prompt file can be accessed by typing "@prompts" in the Chat input
+
+# A prompt file consists of two parts:
+# 1. Everything above the "---" is YAML. Here you can set "temperature", "description", and other options
+# 2. Everything below the "---" is the prompt body
+
+# If you do not want to set any options, you do not need to include the "---"
+
+# In the body, you can reference:
+# 1. Files, using either absolute or relative paths (based on the workspace root)
+  # @README.md
+  # @src/test/test.py
+  # @/Users/me/Desktop/my-project/src/test/test.py
+# 2. URLs, for example
+  # @https://example.com
+# 3. Context providers, for example
+  # @currentFile
+  # @os
+  # @repo-map
+
+# To learn more, see the full .prompt file reference: https://docs.continue.dev/features/prompt-files
+name: Script Example Prompt for script api in typescript
+description: Example of script api in typescript for the LLM to use as a reference 
+---
+Please note that the runtime environment is Liquidbounce Nextgeneration runtime(graaljs on jvm), you may assume that the classes uses the yarn mapping on the latest minecraft protocol.
+The following file is a complete example of how to interact with script api in typescript including the script, settings and command registration system with some basic usage.
+@src/complete.ts
+
+The following file is the full definition of the events available to the typescript api, note that you may not subscribe to a single event twice
+@generated-modules/types-gen/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule.d.ts
+
+Please note that in-order to use inner class, please use `Outter$innver`.
+
+Here are some of the events definition.
+@generated-modules/types-gen/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/event/events/PacketEvent.d.ts
+@generated-modules/types-gen/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/event/events/TransferOrigin.d.ts
+@generated-modules/types-gen/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/event/events/AttackEntityEvent.d.ts
+@generated-modules/types-gen/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/event/events/PlayerMoveEvent.d.ts
+@generated-modules/types-gen/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/event/events/PlayerVelocityStrafe.d.ts
+
+Please actively use tools like `View Subdirectory`, `Exact Search` or `Read Files` for the type definitions if you are not sure about or prompted by the user with existing errors.
+
+If you see errors like this, please use the tool `View Subdirectory` and `Read Files` to determin which file you need to change.
+```
+Cannot find module '@minecraft-yarn-definitions/types/net/minecraft/network/packet/c2s/play/PlayerAttackC2SPacket' or its corresponding type declarations.
+```
+
+Please keep the embedded imports of each script as is.
+
+
+Please note that if if you ever see the any errors information like 
+```
+Conversion of type 'LivingEntity' to type 'Entity' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Types of property 'getBoundingBox' are incompatible.
+    Type '(pose: EntityPose) => Box' is not comparable to type '() => Box'.
+      Target signature provides too few arguments. Expected 1 or more, but got 0.
+```
+but not just limited to type conversion and virtually everything related to generic types and nullability (that also includes case like `mc.player as unknown as Entity`).
+That is due to the limitation of the program used to generate the typescript definition and the difference between the two language. Please use your reason and also instinct to determine if it really is a error in logic or a error in type mapping, if unsure, please speak out.
+

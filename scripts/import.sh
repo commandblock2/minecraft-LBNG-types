@@ -1,0 +1,1 @@
+npm i file:generated-modules/types-gen/minecraft-yarn-definitions --no-save
