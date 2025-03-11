@@ -43,20 +43,36 @@ class LatencyMonitor {
     private currentEMA = 0;
     private lastDisplayTime = 0;
     private displayFrequency = 5000;       // How often to show HUD updates in ms
+    private lastInteractionPos: BlockPosType | null = null;
+    private lastInteractionTime = 0;
+    private interactionCooldown = 250; // ms
 
     /**
      * Track outgoing block interaction
      */
     public trackOutgoingInteraction(blockPos: BlockPosType): void {
+        const now = Date.now();
         this.cleanupTimeouts();
+
+        // Check for rapid clicks on the same block
+        if (this.lastInteractionPos &&
+            this.blockPosEquals(this.lastInteractionPos, blockPos) &&
+            now - this.lastInteractionTime < this.interactionCooldown) {
+            // Skip this interaction to avoid measuring the same update multiple times
+            return;
+        }
 
         // Add to pending window
         this.pendingMeasurements.push({
-            timestamp: Date.now(),
+            timestamp: now,
             blockPos: blockPos,
             matched: false,
             timeout: false
         });
+
+        // Update last interaction info
+        this.lastInteractionPos = blockPos;
+        this.lastInteractionTime = now;
 
         // Maintain window size
         if (this.pendingMeasurements.length > this.MAX_WINDOW_SIZE) {
@@ -302,11 +318,11 @@ script.registerModule({
             if (stats.samples > 0) {
                 // Client.drawStringWithShadow(
                 //     `Latency: ${Math.round(stats.current)}ms (${stats.samples} samples)`,
-                //     5, 
-                //     5, 
+                //     5,
+                //     5,
                 //     0xFFFFFF
                 // );
-                // imagine that Client does even provide that 
+                // imagine that Client does even provide that
             }
         }
     });
