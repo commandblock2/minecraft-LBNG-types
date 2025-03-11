@@ -24,15 +24,15 @@ Adjust the order flexibly to your needs.
 3. Place the `LBNG-script/ts-defgen.js` in your script folder for LiquidBounce
 4. Build or [download the ts-generator jar from github action](https://github.com/commandblock2/ts-generator/actions), place it in your script folder as well.
 5. Do a `.script reload` in your client, this should load the `ts-defgen.js`
-6. Find the `ts-defgen` module and configure the path and point it to your script folder (Don't change the NPM package name (as of now))
+6. Run the `.ts-defgen` command
 
-7. Enable the module and see your client freeze (for around 30 seconds or more or less depending on your setup)
+7. Enable the module and see messages from chat and wait for around a few minute or more or less depending on your setup, this may take a while and also nearly 7GB of additional RAM (other than your intellij idea plus the what Minecraft needs in it's original state).
 
 Now you can find a `types-gen` folder in your script folder, this contains the generated typescript definitions.
 ```
 .
 ├── ts-defgen.js
-├── ts-generator-1.0.0.jar
+├── ts-generator-1.1.1.jar
 └── types-gen
     └── minecraft-yarn-definitions
         ├── package.json
