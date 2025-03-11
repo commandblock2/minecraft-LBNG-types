@@ -87,9 +87,18 @@ class LatencyMonitor {
         const now = Date.now();
         this.cleanupTimeouts();
 
+        // Defensive check to make sure pendingMeasurements is an array
+        if (!Array.isArray(this.pendingMeasurements)) {
+            this.pendingMeasurements = [];
+            return false;
+        }
+
         // Find matching measurement
         for (let i = 0; i < this.pendingMeasurements.length; i++) {
             const measurement = this.pendingMeasurements[i];
+            
+            // Skip if measurement is undefined or null
+            if (!measurement) continue;
 
             // Skip already matched or timed out
             if (measurement.matched || measurement.timeout) continue;
@@ -123,8 +132,15 @@ class LatencyMonitor {
         const now = Date.now();
         let timedOutCount = 0;
 
+        // Guard against pendingMeasurements not being an array
+        if (!Array.isArray(this.pendingMeasurements)) {
+            this.pendingMeasurements = [];
+            return;
+        }
+
+        // Use forEach with a check for each item
         this.pendingMeasurements.forEach(measurement => {
-            if (!measurement.matched && !measurement.timeout) {
+            if (measurement && !measurement.matched && !measurement.timeout) {
                 if (now - measurement.timestamp > this.currentTimeout) {
                     measurement.timeout = true;
                     timedOutCount++;
@@ -146,6 +162,11 @@ class LatencyMonitor {
         // Ignore unreasonably high values (likely errors)
         if (latency > 10000) return;
 
+        // Ensure completedMeasurements is an array
+        if (!Array.isArray(this.completedMeasurements)) {
+            this.completedMeasurements = [];
+        }
+
         this.completedMeasurements.push(latency);
 
         // Maintain array size
@@ -166,7 +187,9 @@ class LatencyMonitor {
      * Update adaptive timeout
      */
     private updateAdaptiveTimeout(): void {
-        if (this.completedMeasurements.length < 5) return;
+        if (!Array.isArray(this.completedMeasurements) || this.completedMeasurements.length < 5) {
+            return;
+        }
 
         // Calculate mean and std deviation
         const sum = this.completedMeasurements.reduce((a, b) => a + b, 0);
@@ -189,23 +212,51 @@ class LatencyMonitor {
      * Compare BlockPos objects
      */
     private blockPosEquals(pos1: BlockPosType, pos2: BlockPosType): boolean {
-        return pos1.getX() === pos2.getX() &&
-            pos1.getY() === pos2.getY() &&
-            pos1.getZ() === pos2.getZ();
+        // Defensive check against null or undefined positions
+        if (!pos1 || !pos2) return false;
+        
+        try {
+            return pos1.getX() === pos2.getX() &&
+                pos1.getY() === pos2.getY() &&
+                pos1.getZ() === pos2.getZ();
+        } catch (e) {
+            // Return false if any method call fails
+            return false;
+        }
     }
 
     /**
      * Get current latency stats
      */
     public getCurrentLatency() {
+        // Ensure completedMeasurements is an array
+        if (!Array.isArray(this.completedMeasurements)) {
+            this.completedMeasurements = [];
+        }
+        
+        // Safe calculations to avoid errors
+        const hasCompletedMeasurements = this.completedMeasurements.length > 0;
+        const minLatency = hasCompletedMeasurements ? 
+            Math.min(...this.completedMeasurements) : 0;
+        const maxLatency = hasCompletedMeasurements ? 
+            Math.max(...this.completedMeasurements) : 0;
+        
+        // Count pending measurements safely
+        let pendingCount = 0;
+        if (Array.isArray(this.pendingMeasurements)) {
+            pendingCount = this.pendingMeasurements.filter(
+                m => m && !m.matched && !m.timeout
+            ).length;
+        }
+        
         return {
             current: this.currentEMA,
-            raw: this.completedMeasurements.length > 0 ?
+            raw: hasCompletedMeasurements ? 
                 this.completedMeasurements[this.completedMeasurements.length - 1] : null,
             samples: this.completedMeasurements.length,
-            min: Math.min(...(this.completedMeasurements.length > 0 ? this.completedMeasurements : [0])),
-            max: Math.max(...(this.completedMeasurements.length > 0 ? this.completedMeasurements : [0])),
-            pending: this.pendingMeasurements.filter(m => !m.matched && !m.timeout).length,
+            min: minLatency,
+            max: maxLatency,
+            pending: pendingCount,
             timeout: this.currentTimeout
         };
     }
@@ -240,6 +291,8 @@ const script = registerScript.apply({
     authors: ["commandblock2"]
 });
 
+const latencyMonitor = new LatencyMonitor();
+
 script.registerModule({
     name: "latency-measurement",
     description: "Measures actual server latency by monitoring existing packet exchanges",
@@ -269,7 +322,6 @@ script.registerModule({
         })
     }
 }, (mod) => {
-    const latencyMonitor = new LatencyMonitor();
 
     // Update EMA weight if changed
     mod.on("valuechanged", (event) => {
@@ -279,35 +331,40 @@ script.registerModule({
     });
 
     mod.on("packet", (event: PacketEvent) => {
-        if (!event.original) {
-            return; // Ignore non-original packets
-        }
-
-        const packet = event.packet;
-        const method = mod.settings.measurementMethod.getValue();
-
-        // Track outgoing packets
-        if (event.origin === TransferOrigin.SEND) {
-            // Block interaction method
-            if ((method === "BlockInteraction" || method === "All") &&
-                packet instanceof PlayerInteractBlockC2SPacket) {
-                latencyMonitor.trackOutgoingInteraction(packet.getBlockHitResult().getBlockPos());
+        try {
+            if (!event.original) {
+                return; // Ignore non-original packets
             }
 
-            // TODO: Add more measurement methods as needed
-            // PlayerMove method
-            // HandSwing method
-        }
+            const packet = event.packet;
+            const method = mod.settings.measurementMethod.getValue();
 
-        // Match incoming packets
-        if (event.origin === TransferOrigin.RECEIVE) {
-            // Block update method
-            if ((method === "BlockInteraction" || method === "All") &&
-                packet instanceof BlockUpdateS2CPacket) {
-                latencyMonitor.matchIncomingBlockUpdate(packet.getPos());
+            // Track outgoing packets
+            if (event.origin === TransferOrigin.SEND) {
+                // Block interaction method
+                if ((method === "BlockInteraction" || method === "All") &&
+                    packet instanceof PlayerInteractBlockC2SPacket) {
+                    const blockPos = packet.getBlockHitResult().getBlockPos();
+                    if (blockPos) {
+                        latencyMonitor.trackOutgoingInteraction(blockPos);
+                    }
+                }
             }
 
-            // TODO: Add corresponding response handlers for other methods
+            // Match incoming packets
+            if (event.origin === TransferOrigin.RECEIVE) {
+                // Block update method
+                if ((method === "BlockInteraction" || method === "All") &&
+                    packet instanceof BlockUpdateS2CPacket) {
+                    const blockPos = packet.getPos();
+                    if (blockPos) {
+                        latencyMonitor.matchIncomingBlockUpdate(blockPos);
+                    }
+                }
+            }
+        } catch (e) {
+            // Silently catch errors to prevent script from breaking
+            console.error("Error in packet handler:", e);
         }
     });
 
@@ -316,34 +373,21 @@ script.registerModule({
         if (mod.settings.displayHud.getValue()) {
             const stats = latencyMonitor.getCurrentLatency();
             if (stats.samples > 0) {
-                // Client.drawStringWithShadow(
-                //     `Latency: ${Math.round(stats.current)}ms (${stats.samples} samples)`,
-                //     5,
-                //     5,
-                //     0xFFFFFF
-                // );
-                // imagine that Client does even provide that
+                // HUD Rendering would go here
+                // Client.drawStringWithShadow() is commented out as it's not available
             }
         }
     });
 });
 
-// Register commands at script level, not module level
+// Register commands at script level
 script.registerCommand({
     name: "latencyreset",
     onExecute: () => {
-        // @ts-expect-error
-        const module = Client.getModuleManager().getModule("latency-measurement");
-        if (module) {
-            // Access the latencyMonitor through a function call to avoid direct access issues
-            const mod = module as any;
-            if (mod._bindings && mod._bindings.latencyMonitor) {
-                mod._bindings.latencyMonitor.reset();
-            } else {
-                Client.displayChatMessage("§8[§bLatency§8] §cCannot access latency monitor");
-            }
-        } else {
-            Client.displayChatMessage("§8[§bLatency§8] §cModule not found");
+        try {
+            latencyMonitor.reset();
+        } catch (e) {
+            Client.displayChatMessage("§8[§bLatency§8] §cError in reset command");
         }
     }
 });
@@ -351,18 +395,10 @@ script.registerCommand({
 script.registerCommand({
     name: "latency",
     onExecute: () => {
-        // @ts-expect-error
-        const module = Client.getModuleManager().getModule("latency-measurement");
-        if (module) {
-            // Access the latencyMonitor through a function call to avoid direct access issues
-            const mod = module as any;
-            if (mod._bindings && mod._bindings.latencyMonitor) {
-                mod._bindings.latencyMonitor.displayLatency();
-            } else {
-                Client.displayChatMessage("§8[§bLatency§8] §cCannot access latency monitor");
-            }
-        } else {
-            Client.displayChatMessage("§8[§bLatency§8] §cModule not found");
+        try {
+            latencyMonitor.displayLatency();
+        } catch (e) {
+            Client.displayChatMessage("§8[§bLatency§8] §cError in latency command");
         }
     }
 });
