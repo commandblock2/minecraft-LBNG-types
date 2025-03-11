@@ -46,7 +46,7 @@ export async function initGitRepo(workDir: string) {
     // Initialize new git repo
     execSync('git init', { cwd: workDir })
     execSync('git add .', { cwd: workDir })
-    execSync('git commit -m "Initial commit"', { cwd: workDir })
+    execSync('git commit -m "Initial commit"', { cwd: workDir, stdio: 'ignore' })
 }
 
 export async function cleanupGitRepo(workDir: string) {

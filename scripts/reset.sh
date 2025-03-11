@@ -1,2 +1,2 @@
 npm i
-rm -r generated-modules/types-gen
+rm -rf generated-modules/types-gen
