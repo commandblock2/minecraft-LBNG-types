@@ -1,13 +1,15 @@
 # minecraft-LBNG-types
 
 This repo contains 
-- instruction and scripts for creating 
-    - typescript definitions for Minecraft (with mods*)
-    - typescript definitions for LiquidBounce NextGen
+- instruction and scripts for creating typescript definitions
+    - for Minecraft (with mods*)
+    - for LiquidBounce NextGen
+    - for everything inside of the jvm
 - typescript definitions for embedded context of LiquidBounce NextGen scriptAPI
 - a set of manually maintained patches to make the script api work properly
 - a set of examples LiquidBounce NextGen script using typescript 
-- a compiler script that will compile all the .ts files into .js files that could run in graaljs (LiquidBounce NextGen runtime)
+- a compiler script that will compile all the .ts files into .js files that could run in graaljs (LiquidBounce NextGen runtime) with watch mode
+- some prompt files to use on LLMs, specifically for claude + continue.dev vscode extension, at [.continue/prompts](.continue/prompts).
 
 Note: the mods are only limited to those presented at the development environment of LiquidBounce NextGen.
 
@@ -26,7 +28,7 @@ Adjust the order flexibly to your needs.
 5. Do a `.script reload` in your client, this should load the `ts-defgen.js`
 6. Run the `.ts-defgen` command
 
-7. Enable the module and see messages from chat and wait for around a few minute or more or less depending on your setup, this may take a while and also nearly 7GB of additional RAM (other than your intellij idea plus the what Minecraft needs in it's original state).
+7. See messages from chat and wait for around a few minute or more or less depending on your setup, this may take a while and also nearly 7GB of additional RAM (other than your intellij idea plus the what Minecraft needs in it's original state, causes OOM for me a lot of times xD).
 
 Now you can find a `types-gen` folder in your script folder, this contains the generated typescript definitions.
 ```
@@ -38,68 +40,25 @@ Now you can find a `types-gen` folder in your script folder, this contains the g
         ├── package.json
         ├── tsconfig.json
         └── types
+            ├── ai
             ├── com
-            │   ├── google
-            │   ├── llamalad7
-            │   ├── mojang
-            │   ├── terraformersmc
-            │   └── viaversion
+            ├── _COROUTINE
+            ├── de
             ├── io
-            │   └── netty
             ├── it
-            │   └── unimi
             ├── java
-            │   ├── awt
-            │   ├── io
-            │   ├── lang
-            │   ├── math
-            │   ├── net
-            │   ├── nio
-            │   ├── security
-            │   ├── text
-            │   ├── time
-            │   └── util
             ├── javax
-            │   ├── crypto
-            │   ├── security
-            │   └── sound
             ├── jdk
-            │   └── internal
+            ├── joptsimple
             ├── kotlin
-            │   ├── Function.d.ts
-            │   ├── Pair.d.ts
-            │   ├── Result$Companion.d.ts
-            │   ├── Result.d.ts
-            │   ├── Triple.d.ts
-            │   ├── Unit.d.ts
-            │   ├── jvm
-            │   ├── ranges
-            │   └── reflect
+            ├── kotlinx
             ├── net
-            │   ├── caffeinemc
-            │   ├── ccbluex
-            │   ├── fabricmc
-            │   └── minecraft
+            ├── okhttp3
+            ├── okio
             ├── org
-            │   ├── apache
-            │   ├── graalvm
-            │   ├── joml
-            │   ├── lwjgl
-            │   ├── objectweb
-            │   ├── slf4j
-            │   └── spongepowered
             ├── oshi
-            │   ├── PlatformEnum.d.ts
-            │   ├── SystemInfo.d.ts
-            │   ├── hardware
-            │   └── software
             └── sun
-                ├── invoke
-                ├── java2d
-                ├── net
-                ├── nio
-                ├── reflect
-                └── util
+├── ... other scripts.js
 
 ```
 
@@ -110,7 +69,7 @@ Now you can find a `types-gen` folder in your script folder, this contains the g
 3. Run the script `apply-patch` with `npm run apply-patches`
 4. Run `npm install file:./generated-modules/types-gen/minecraft-yarn-definitions/ --no-save`, no-save for now, not sure if I should do this.
 5. Open the `template.ts` file and try start writing your script, you should see TypeScript type hints for all the classes that are available. vscode will automatically generate working imports, but **you should not touch the import statement with `@embedded` namespace.**
-6. Run the script `compile` with npm like step 4
+6. Run the script `compile` with npm like step 4 or `npm run watch`
 7. Corresponding javascript file is generated in the `dist` directory, you can link this dist directory to your scripts directory in LB.
 
 
