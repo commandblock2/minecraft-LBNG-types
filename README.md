@@ -24,7 +24,7 @@ Adjust the order flexibly to your needs.
 1. Setup development environment for Liquidbounce NextGen
 2. Launch Minecraft with LiquidBounce NextGen with gradle (either with your intellij idea or `./gradlew runClient` or whatever on Windows), this is for un-obfuscated names
 3. Place the `LBNG-script/ts-defgen.js` in your script folder for LiquidBounce
-4. Build or [download the ts-generator jar from github action](https://github.com/commandblock2/ts-generator/actions), place it in your script folder as well.
+4. Build or [download the latest released ts-generator jar from github](https://github.com/commandblock2/ts-generator/releases), place it in your script folder as well.
 5. Do a `.script reload` in your client, this should load the `ts-defgen.js`
 6. Run the `.ts-defgen` command
 
