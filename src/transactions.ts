@@ -38,7 +38,6 @@ const MAX_QUEUE_SIZE = 100;
 // Global statistics
 let totalTransactions = 0;
 let lastReportTime = 0;
-const REPORT_INTERVAL = 5000; // Report every 5 seconds
 const PARAMETER_FREQUENCY: { [key: number]: number } = {};
 
 const script = registerScript.apply({
@@ -134,7 +133,7 @@ script.registerModule({
         Client.displayChatMessage(`§e[Transactions] §fRate: §a${packetsPerSecond.toFixed(2)} §fpackets/sec | Total: §a${totalTransactions}`);
         
         if (mod.settings.showParameters.getValue()) {
-            const topParameters = getTopParameters(3);
+            const topParameters = getTopParameters(8);
             if (topParameters.length > 0) {
                 Client.displayChatMessage(`§e[Transactions] §fTop parameters: ${topParameters.map(p => `§a${p.parameter}§f(${p.count})`).join(", ")}`);
             }
