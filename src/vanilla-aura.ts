@@ -1,5 +1,3 @@
-// imports
-/* eslint-disable unused-imports/no-unused-imports */
 import {
     Setting,
     Vec3i,
@@ -19,6 +17,7 @@ import {
     ReflectionUtil,
     ParameterValidator,
     UnsafeThread,
+    localStorage,
     registerScript
 } from "@embedded";
 import { TransferOrigin } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/event/events/TransferOrigin";

@@ -1,15 +1,20 @@
 # minecraft-LBNG-types
 
-**DISCLAIMER: Use this at your own risk!!! This repo does NOT**
-    - **contains any generated definitions by itself**
-    - **redistribute the game itself**
+---
+
+**DISCLAIMER: Use this at your own risk!!! This is an unofficial project not endorsed by Mojang or fabric developers. This repo does NOT**  
+- **contains any generated minecraft type definitions by itself**
+- **redistribute the game itself**
+- **guarentee the correctness of the generated definition**
+
+---
 
 This repo contains 
 - instruction and scripts for creating typescript definitions
     - for Minecraft (with mods*)
     - for LiquidBounce NextGen
     - for everything inside of the jvm
-- typescript definitions for embedded context of LiquidBounce NextGen scriptAPI
+- typescript definitions for **embedded context** of LiquidBounce NextGen scriptAPI
 - a set of manually maintained patches to make the script api work properly
 - a set of examples LiquidBounce NextGen script using typescript 
 - a compiler script that will compile all the .ts files into .js files that could run in graaljs (LiquidBounce NextGen runtime) with watch mode
@@ -26,7 +31,7 @@ Adjust the order flexibly to your needs.
 ### Generating the typescript definitions
 
 1. Setup development environment for Liquidbounce NextGen
-2. Launch Minecraft with LiquidBounce NextGen with gradle (either with your intellij idea or `./gradlew runClient` or whatever on Windows), this is for un-obfuscated names
+2. **Clone LBNG**, run `git checkout 451cb31e9bf093fe07f9b28202bc2471921ea13d` (for version 0.29.0 release) and launch with gradle `./gradlew runClient` without intellij idea(recommened because of the sheer amount of memory it takes to generate the definition).
 3. Place the `LBNG-script/ts-defgen.js` in your script folder for LiquidBounce
 4. Build or [download the latest released ts-generator jar from github](https://github.com/commandblock2/ts-generator/releases), place it in your script folder as well.
 5. Do a `.script reload` in your client, this should load the `ts-defgen.js`

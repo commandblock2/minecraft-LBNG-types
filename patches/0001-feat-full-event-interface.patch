@@ -1,17 +1,17 @@
-From 6b3b18f3778af17a65eaf6d09af3530728220e75 Mon Sep 17 00:00:00 2001
+From cfe3cb28fdc3e0f24e32015ae1f20c4ea9ac4e15 Mon Sep 17 00:00:00 2001
 From: commandblock2 <tony_hu@live.com>
-Date: Sun, 2 Mar 2025 02:37:25 +0800
-Subject: [PATCH] feat: full event interface
+Date: Mon, 31 Mar 2025 23:25:32 +0800
+Subject: [PATCH] feat-full-event-interface
 
 ---
  .../bindings/features/ScriptModule.d.ts       | 222 ++++++++++++++++++
  1 file changed, 222 insertions(+)
 
 diff --git a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule.d.ts b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule.d.ts
-index 3bdafbb..e84e5a2 100644
+index 14f3e36a..a5542be6 100644
 --- a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule.d.ts
 +++ b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule.d.ts
-@@ -17,6 +17,117 @@ import type { PolyglotScript } from '../../../../../../net/ccbluex/liquidbounce/
+@@ -18,6 +18,117 @@ import type { PolyglotScript } from '../../../../../../net/ccbluex/liquidbounce/
  import type { Supplier } from '../../../../../../java/util/function/Supplier.d.ts'
  import type { Unit } from '../../../../../../kotlin/Unit.d.ts'
  import type { Event } from '../../../../../../net/ccbluex/liquidbounce/event/Event.d.ts'
@@ -129,7 +129,7 @@ index 3bdafbb..e84e5a2 100644
  export class ScriptModule extends ClientModule {
      static Companion: ScriptModule$Companion;
      static getEnabled$annotations(): Void;
-@@ -45,4 +156,115 @@ export class ScriptModule extends ClientModule {
+@@ -49,4 +160,115 @@ export class ScriptModule extends ClientModule {
      enable(): Unit;
      // private hookHandler(eventName: string): Unit;
      on(eventName: string, handler: Function1<Object, Unit>): Unit;
@@ -247,5 +247,5 @@ index 3bdafbb..e84e5a2 100644
  }
 \ No newline at end of file
 -- 
-2.47.1
+2.48.1
 

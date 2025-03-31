@@ -1,4 +1,3 @@
-// embedded.ts
 declare module "@embedded" {
     // imports
     import { ScriptSetting } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting";
@@ -19,6 +18,7 @@ declare module "@embedded" {
     import { ScriptReflectionUtil } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/api/ScriptReflectionUtil";
     import { ScriptParameterValidator } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/api/ScriptParameterValidator";
     import { ScriptUnsafeThread } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/api/ScriptUnsafeThread";
+    import { ConcurrentHashMap } from "@minecraft-yarn-definitions/types/java/util/concurrent/ConcurrentHashMap";
     import { PolyglotScript$RegisterScript } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript$RegisterScript";
     
     
@@ -46,6 +46,8 @@ declare module "@embedded" {
         export const ParameterValidator: ScriptParameterValidator;
     
         export const UnsafeThread: ScriptUnsafeThread;
+    
+        export const localStorage: ConcurrentHashMap;
     
         export const registerScript: PolyglotScript$RegisterScript;
     

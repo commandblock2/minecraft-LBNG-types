@@ -1,17 +1,17 @@
-From 98c179e2b86e5413afd82e8eeee9571aa1468b0b Mon Sep 17 00:00:00 2001
+From bdba6efac6c0086b38bf8cb823547e9c5acc0863 Mon Sep 17 00:00:00 2001
 From: commandblock2 <tony_hu@live.com>
-Date: Sun, 2 Mar 2025 02:46:13 +0800
+Date: Mon, 31 Mar 2025 23:35:00 +0800
 Subject: [PATCH] feat: module and command registration with settings fixed
 
 ---
- .../liquidbounce/config/types/Value.d.ts      | 21 ++++--
+ .../liquidbounce/config/types/Value.d.ts      | 21 +++--
  .../script/PolyglotScript$RegisterScript.d.ts | 15 +++-
- .../liquidbounce/script/PolyglotScript.d.ts   | 43 ++++++++++--
- .../bindings/features/ScriptSetting.d.ts      | 70 +++++++++++++++----
- 4 files changed, 125 insertions(+), 24 deletions(-)
+ .../liquidbounce/script/PolyglotScript.d.ts   | 43 +++++++++-
+ .../bindings/features/ScriptSetting.d.ts      | 80 ++++++++++++++++---
+ 4 files changed, 134 insertions(+), 25 deletions(-)
 
 diff --git a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/config/types/Value.d.ts b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/config/types/Value.d.ts
-index b1b660a..f78833e 100644
+index 20d082de..a6023037 100644
 --- a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/config/types/Value.d.ts
 +++ b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/config/types/Value.d.ts
 @@ -8,8 +8,13 @@ import type { Gson } from '../../../../../com/google/gson/Gson.d.ts'
@@ -29,16 +29,16 @@ index b1b660a..f78833e 100644
  export class Value<T extends Object | number | string | boolean> extends Object {
      constructor(name: string, aliases: string[], defaultValue: T, valueType: ValueType, listType: ListValueType, independentDescription: boolean)
      readonly aliases: string[];
-@@ -32,8 +37,6 @@ export class Value<T extends Object | number | string | boolean> extends Object
-     doNotIncludeAlways(): Value<T>;
+@@ -35,8 +40,6 @@ export class Value<T extends Object | number | string | boolean> extends Object
      doNotIncludeWhen(condition: Function0<boolean>): Value<T>;
      get(): T;
+     getTagValue(): Object;
 -    getValue(u: Object | null, property: KProperty<Object>): T;
 -    getValue(): Object;
+     immutable(): Value<T>;
      independentDescription(): Value<T>;
      notAnOption(): Value<T>;
-     onChange(listener: Function1<T, T>): Value<T>;
-@@ -42,7 +45,15 @@ export class Value<T extends Object | number | string | boolean> extends Object
+@@ -46,7 +49,15 @@ export class Value<T extends Object | number | string | boolean> extends Object
      set(t: T): Unit;
      set(t: T, apply: Function1<T, Unit>): Unit;
      setByString(string: string): Unit;
@@ -58,7 +58,7 @@ index b1b660a..f78833e 100644
  }
 \ No newline at end of file
 diff --git a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript$RegisterScript.d.ts b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript$RegisterScript.d.ts
-index 8625b71..0010274 100644
+index 8625b71b..00102745 100644
 --- a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript$RegisterScript.d.ts
 +++ b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript$RegisterScript.d.ts
 @@ -1,10 +1,19 @@
@@ -86,7 +86,7 @@ index 8625b71..0010274 100644
  }
 \ No newline at end of file
 diff --git a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts
-index 9c577c1..7373b77 100644
+index 9c577c1d..7373b777 100644
 --- a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts
 +++ b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts
 @@ -9,7 +9,38 @@ import type { Command } from '../../../../net/ccbluex/liquidbounce/features/comm
@@ -145,7 +145,7 @@ index 9c577c1..7373b77 100644
 +    ): Unit;
 +}
 diff --git a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting.d.ts b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting.d.ts
-index 00af2c3..aac7442 100644
+index 8437232f..3a0dd556 100644
 --- a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting.d.ts
 +++ b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting.d.ts
 @@ -1,5 +1,4 @@
@@ -154,10 +154,11 @@ index 00af2c3..aac7442 100644
  import type { Value } from '../../../../../../net/ccbluex/liquidbounce/config/types/Value.d.ts'
  import type { ChooseListValue } from '../../../../../../net/ccbluex/liquidbounce/config/types/ChooseListValue.d.ts'
  import type { NamedChoice } from '../../../../../../net/ccbluex/liquidbounce/config/types/NamedChoice.d.ts'
-@@ -9,17 +8,64 @@ import type { InputUtil$Key } from '../../../../../../net/minecraft/client/util/
+@@ -10,18 +9,73 @@ import type { MultiChooseStringListValue } from '../../../../../../net/ccbluex/l
  import type { ClosedRange } from '../../../../../../kotlin/ranges/ClosedRange.d.ts'
  import type { ValueType } from '../../../../../../net/ccbluex/liquidbounce/config/types/ValueType.d.ts'
  import type { ListValueType } from '../../../../../../net/ccbluex/liquidbounce/config/types/ListValueType.d.ts'
++
 +
 +interface BaseValue {
 +    name: string;
@@ -208,6 +209,12 @@ index 00af2c3..aac7442 100644
 +    default: string[];
 +}
 +
++interface ScriptMultiChooseStringListValue extends BaseValue {
++    default: string[] | undefined;
++    choices: string[];
++    canBeNone: boolean | undefined;
++}
++
  export class ScriptSetting extends Object {
      static INSTANCE: ScriptSetting;
 -    boolean(value: Value): Value<boolean>;
@@ -217,6 +224,7 @@ index 00af2c3..aac7442 100644
 -    int(value: Value): RangedValue<number>;
 -    intRange(value: Value): RangedValue<(Object | null)[]>;
 -    key(value: Value): Value<InputUtil$Key>;
+-    multiChoose(value: Value): MultiChooseStringListValue;
 -    // private rangedValue<T extends Object | number | string | boolean>(name: string, default: T, range: ClosedRange<Object>, suffix: string, valueType: ValueType): RangedValue<T>;
 -    text(value: Value): Value<string>;
 -    textArray(value: Value): Value<string[]>;
@@ -227,10 +235,12 @@ index 00af2c3..aac7442 100644
 +    floatRange(value: FloatRangeValue): RangedValue<ClosedFloatingPointRange<number>>;
 +    int(value: IntValue): RangedValue<number>;
 +    intRange(value: IntRangeValue): RangedValue<number[]>;
-+    key(value: KeyValue): Value<InputUtil$Key>;    text(value: TextView): Value<string>;
++    key(value: KeyValue): Value<InputUtil$Key>;
++    text(value: TextView): Value<string>;
 +    textArray(value: TextArrayValue): Value<string[]>;
++    multiChoose(value: ScriptMultiChooseStringListValue): MultiChooseStringListValue;
  }
 \ No newline at end of file
 -- 
-2.47.1
+2.48.1
 

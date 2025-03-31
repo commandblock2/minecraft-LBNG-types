@@ -1,5 +1,3 @@
-// imports
-/* eslint-disable unused-imports/no-unused-imports */
 import {
     Setting,
     Vec3i,
@@ -19,6 +17,7 @@ import {
     ReflectionUtil,
     ParameterValidator,
     UnsafeThread,
+    localStorage,
     registerScript
 } from "@embedded";
 /* eslint-enable unused-imports/no-unused-imports */
