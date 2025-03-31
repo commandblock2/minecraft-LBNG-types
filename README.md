@@ -1,5 +1,9 @@
 # minecraft-LBNG-types
 
+**DISCLAIMER: Use this at your own risk!!! This repo does NOT**
+    - **contains any generated definitions by itself**
+    - **redistribute the game itself**
+
 This repo contains 
 - instruction and scripts for creating typescript definitions
     - for Minecraft (with mods*)
