@@ -33,7 +33,7 @@ interface TransactionEntry {
 
 // Global variables for storing transaction data
 const transactionQueue: TransactionEntry[] = [];
-const MAX_QUEUE_SIZE = 100;
+const MAX_QUEUE_SIZE = 1000;
 
 // Global statistics
 let totalTransactions = 0;
