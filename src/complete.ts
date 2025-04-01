@@ -81,6 +81,12 @@ script.registerModule({
             name: "Animal",
             default: "Capybara",
             choices: ["Axolotl", "Capybara", "Snek"]
+        }),
+        multichoose: Setting.multiChoose({
+            name: "WhatIsThis",
+            choices: ["OneChoice", "Another"],
+            default: ["OneChoice"],
+            canBeNone: false
         })
     }
 
@@ -105,6 +111,7 @@ script.registerModule({
         Client.displayChatMessage(`Message: ${mod.settings.message.getValue()}`);
         Client.displayChatMessage(`Messages: ${mod.settings.messages.getValue()}`);
         Client.displayChatMessage(`Animal: ${mod.settings.animal.getValue()}`);
+        Client.displayChatMessage(`MultiChoice: ${mod.settings.multichoose.getValue()}`);
 
         mod.settings.fastSwing.setValue(false);
         mod.settings.range.setValue(2.3);
