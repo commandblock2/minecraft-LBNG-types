@@ -23,12 +23,15 @@ import {
 import { TransferOrigin } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/event/events/TransferOrigin";
 import { ClientPlayerInteractionManager } from "@minecraft-yarn-definitions/types/net/minecraft/client/network/ClientPlayerInteractionManager";
 import { Entity } from "@minecraft-yarn-definitions/types/net/minecraft/entity/Entity";
+import { EntityType } from "@minecraft-yarn-definitions/types/net/minecraft/entity/EntityType";
 import { LivingEntity } from "@minecraft-yarn-definitions/types/net/minecraft/entity/LivingEntity";
 import { PlayerEntity } from "@minecraft-yarn-definitions/types/net/minecraft/entity/player/PlayerEntity";
 import { UseAction } from "@minecraft-yarn-definitions/types/net/minecraft/item/consume/UseAction";
 import { PlayerActionC2SPacket } from "@minecraft-yarn-definitions/types/net/minecraft/network/packet/c2s/play/PlayerActionC2SPacket";
 import { PlayerActionC2SPacket$Action } from "@minecraft-yarn-definitions/types/net/minecraft/network/packet/c2s/play/PlayerActionC2SPacket$Action";
 import { PlayerInteractEntityC2SPacket } from "@minecraft-yarn-definitions/types/net/minecraft/network/packet/c2s/play/PlayerInteractEntityC2SPacket";
+import { EntitySpawnS2CPacket } from "@minecraft-yarn-definitions/types/net/minecraft/network/packet/s2c/play/EntitySpawnS2CPacket";
+import { PlayerListS2CPacket } from "@minecraft-yarn-definitions/types/net/minecraft/network/packet/s2c/play/PlayerListS2CPacket";
 /* eslint-enable unused-imports/no-unused-imports */
 // DO NOT TOUCH ANYTHING ABOVE THIS LINE, also not sure why it didn't work
 
@@ -59,6 +62,10 @@ script.registerModule({
             range: [0, 20],
             default: 6.25
         }),
+        attackOnSpawn: Setting.boolean({
+            name: "attackOnSpawn",
+            default: true
+        })
 
     }
 
@@ -103,7 +110,7 @@ script.registerModule({
                 return entity.hurtTime < mod.settings.hurtTime.get()
             })
                 .filter((entity) => {
-                    return entity.distanceTo(mc.player as unknown as Entity ) < mod.settings.range.get()
+                    return entity.distanceTo(mc.player as unknown as Entity) < mod.settings.range.get()
                 })
                 .filter((entity) => {
                     return entity != (mc.player as unknown as LivingEntity)
@@ -131,6 +138,28 @@ script.registerModule({
     })
 
     mod.on("packet", (event) => {
+
+        if (event.packet instanceof EntitySpawnS2CPacket &&
+            mod.settings.attackOnSpawn.getValue()
+        ) {
+            const x = event.packet.x
+            const y = event.packet.y
+            const z = event.packet.z
+
+            if ((mc.player?.getPos().distanceTo(new Vec3d(x, y, z)) ?? 20 < 8) 
+                && event.packet.entityType == (EntityType.PLAYER as any)
+            && event.packet.entityId != mc.player?.getId()) {
+                mc.getNetworkHandler()?.sendPacket(
+                    new PlayerInteractEntityC2SPacket(
+                        event.packet.entityId,
+                        mc.player?.isSneaking() ?? false,
+                        PlayerInteractEntityC2SPacket.ATTACK
+                    ))
+
+                packetThisTick++;
+            }
+        }
+
         if (!event.original || event.origin == TransferOrigin.RECEIVE)
             return
 
