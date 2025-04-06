@@ -26,6 +26,7 @@ import { PlayerListS2CPacket } from "@minecraft-yarn-definitions/types/net/minec
 import { PlayerRemoveS2CPacket } from "@minecraft-yarn-definitions/types/net/minecraft/network/packet/s2c/play/PlayerRemoveS2CPacket";
 import { ModuleAntiBot } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/features/module/modules/misc/antibot/ModuleAntiBot"
 import { PlayerEntity } from "@minecraft-yarn-definitions/types/net/minecraft/entity/player/PlayerEntity";
+import { Throwable } from "@minecraft-yarn-definitions/types/java/lang/Throwable";
 /* eslint-enable unused-imports/no-unused-imports */
 // DO NOT TOUCH ANYTHING ABOVE THIS LINE, also not sure why it didn't work
 
@@ -50,20 +51,27 @@ script.registerModule({
     })
 
     mod.on("packet", event => {
-        if (event.packet instanceof PlayerListS2CPacket)
-            event.packet.getPlayerAdditionEntries().forEach(entry => {
-            const profile = entry.profile() as GameProfile | undefined;
-            if (!profile)
-                return
 
-            if (!ModuleAntiBot.INSTANCE.isGameProfileUnique(profile) &&
-                ModuleAntiBot.INSTANCE.isADuplicate(profile)) {
-                    botId = profile.getId()
-                    Client.displayChatMessage(`entity with ${profile.getName()} with id ${profile.id} is flagged as a bot (when creating the bot entity)`)
-                }
-                
+        try {
+            if (event.packet instanceof PlayerListS2CPacket)
+                event.packet.getPlayerAdditionEntries().forEach(entry => {
+                const profile = entry.profile() as GameProfile | undefined;
+                if (!profile)
+                    return
+    
+                if (!ModuleAntiBot.INSTANCE.isGameProfileUnique(profile) &&
+                    ModuleAntiBot.INSTANCE.isADuplicate(profile)) {
+                        botId = profile.getId()
+                        Client.displayChatMessage(`entity with ${profile.getName()} with id ${profile.id} is flagged as a bot (when creating the bot entity)`)
+                    }
+                    
+            }
+            )
+        } catch (e: any) {
+            Client.displayChatMessage((e as unknown as Throwable).toString())
         }
-        )
+
+
     })
 
     mod.on("tagentityevent", event => {
