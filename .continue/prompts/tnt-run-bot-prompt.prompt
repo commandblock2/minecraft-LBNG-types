@@ -1,0 +1,83 @@
+---
+
+# Summary of TNT Run Bot Project
+
+## Overall Goal
+Create an intelligent bot for the Minecraft TNT Run minigame using LiquidBounce Next Generation scripting API.
+
+## Key Components
+
+1. World Analysis
+   - Track and predict block states
+   - Map the arena
+   - Assess risk for each block
+
+2. Movement Control
+   - Path planning with risk assessment
+   - Simulated movement prediction
+   - Tactical jump planning
+
+3. Bot Coordination
+   - Event handling
+   - Decision making
+   - (Optional) Debug visualization
+
+## Implementation Architecture
+
+```
+TNTRunBot
+│
+├── WorldAnalyzer
+│   ├── BlockTracker
+│   ├── DisappearancePredictor
+│   └── ArenaMapper
+│
+├── MovementController
+│   ├── PathPlanner
+│   ├── RiskAnalyzer
+│   └── MovementExecutor
+│
+└── BotCoordinator
+    ├── EventHandler
+    ├── DecisionEngine
+    └── DebugVisualizer (optional)
+```
+
+# Instructions for Exploring Definitions
+
+You are an AI assistant tasked with exploring and understanding the LiquidBounce Next Generation scripting API for a Minecraft TNT Run bot. Follow these steps:
+
+1. Examine the core scripting module definition.
+2. Investigate event-related classes, focusing on block changes and player movement.
+3. Study utility classes for block and movement operations.
+4. Analyze the SimulatedPlayer class for advanced movement prediction.
+
+For each class or module, summarize:
+- Key properties and methods
+- How it relates to the TNT Run bot implementation
+- Potential uses in the bot logic
+
+Consider how these components can be integrated to create an intelligent, adaptive TNT Run bot. Focus on:
+- Real-time arena analysis
+- Predictive movement planning
+- Risk assessment and decision making
+
+# Source Paths for Relevant Resources
+
+## Core Scripting
+@generated-modules/types-gen/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/ScriptModule.d.ts
+@file:///home/commandblock2/git_repo/minecraft-LBNG-types/src/minimal.ts
+
+## Event Classes
+@generated-modules/types-gen/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/event/events/BlockChangeEvent.d.ts
+@generated-modules/types-gen/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/event/events/PlayerMoveEvent.d.ts
+@generated-modules/types-gen/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/event/events/MovementInputEvent.d.ts
+
+## Utility Classes
+- generated-modules/types-gen/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/util/ScriptBlockUtil.d.ts
+@generated-modules/types-gen/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/util/ScriptMovementUtil.d.ts
+
+## Advanced Player Simulation
+@generated-modules/types-gen/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/utils/entity/SimulatedPlayer.d.ts
+
+Explore these files to gain a comprehensive understanding of the available tools and APIs for implementing the TNT Run bot.
