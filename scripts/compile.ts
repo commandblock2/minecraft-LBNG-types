@@ -137,6 +137,87 @@ function compile(fileNames: string[], options: ts.CompilerOptions, changedFiles?
 function watchMode(fileNames: string[], options: ts.CompilerOptions) {
     // Initial compilation
     compile(fileNames, options);
+
+    // --- Hot-reload integration config ---
+    // Default port is 18470, can be overridden with env var or --hot-reload-port
+    let reloadPort = 18470;
+    const args = process.argv.slice(2);
+    for (let i = 0; i < args.length; ++i) {
+        if (args[i].startsWith('--hot-reload-port')) {
+            const split = args[i].split('=');
+            if (split.length === 2) {
+                reloadPort = parseInt(split[1], 10);
+            } else if (args[i + 1]) {
+                reloadPort = parseInt(args[i + 1], 10);
+                ++i;
+            }
+        }
+    }
+    if (process.env.HOT_RELOAD_PORT) {
+        reloadPort = parseInt(process.env.HOT_RELOAD_PORT, 10);
+    }
+    const reloadUrl = `http://127.0.0.1:${reloadPort}/reload`;
+
+    /**
+     * Trigger the hot-reloader server to reload only just-updated scripts.
+     * @param {string[]} changedFilePaths - List of changed source file paths.
+     */
+    async function triggerHotReload(changedFilePaths: string[]) {
+        if (!changedFilePaths || changedFilePaths.length === 0) return;
+        // Match the contract of hot-reloader: send JSON array of file paths and filenames
+        // so it can match on either.
+        // For each path, provide both absolute path and basename (could later expand to more)
+        const idSet = new Set<string>();
+        for (const f of changedFilePaths) {
+            idSet.add(path.resolve(f));
+            idSet.add(path.basename(f, ".ts"));
+        }
+        const idList = Array.from(idSet);
+
+        try {
+            const body = JSON.stringify(idList);
+            // Prefer node "fetch" API (Node 18+) but fallback to http.request
+            if (typeof fetch === 'function') {
+                const res = await fetch(reloadUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body,
+                });
+                const txt = await res.text();
+                console.log(`[hot-reload] HTTP POST /reload: ${res.status} ${txt}`);
+            } else {
+                // Fallback minimal http request
+                const http = require('http');
+                const urlObj = new URL(reloadUrl);
+                const req = http.request(
+                    {
+                        host: urlObj.hostname,
+                        port: urlObj.port,
+                        path: urlObj.pathname,
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Content-Length': Buffer.byteLength(body),
+                        },
+                    },
+                    (res: any) => {
+                        let data = '';
+                        res.on('data', (chunk: any) => (data += chunk));
+                        res.on('end', () => {
+                            console.log(`[hot-reload] HTTP POST /reload: ${res.statusCode} ${data}`);
+                        });
+                    }
+                );
+                req.on('error', (err: any) => {
+                    console.warn(`[hot-reload] Could not reach hot-reloader (${reloadUrl}): ${err}`);
+                });
+                req.write(body);
+                req.end();
+            }
+        } catch (err) {
+            console.warn(`[hot-reload] Error sending HTTP reload request: ${err}`);
+        }
+    }
     
     console.log('\nWatch mode enabled. Waiting for file changes...');
     
@@ -168,9 +249,13 @@ function watchMode(fileNames: string[], options: ts.CompilerOptions) {
             
             // Set a new timeout to compile after changes settle
             timeoutId = setTimeout(() => {
+                // Make a copy of changedFiles for this compilation pass
+                const justChanged = Array.from(changedFiles);
                 compile(fileNames, options, changedFiles);
                 changedFiles.clear();
                 timeoutId = null;
+                // HOT RELOAD: Notify server after each compilation pass, sending only updated files
+                triggerHotReload(justChanged);
                 console.log('\nWaiting for file changes...');
             }, 250);
         }

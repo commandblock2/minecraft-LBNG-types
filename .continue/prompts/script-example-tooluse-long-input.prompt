@@ -40,7 +40,7 @@ Here are some of the events definition.
 @generated-modules/types-gen/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/event/events/TransferOrigin.d.ts
 @generated-modules/types-gen/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/event/events/AttackEntityEvent.d.ts
 
-You will keep the `embedded` imports of each script as is.
+You will use `import` instead of `Java.type` for imports from jvm like the example `complete.ts`, because the custom compiler works, if you failed to follow this the human will get really angry. You will explore the repo for the api you would like to call. You will keep the `embedded` imports of each script as is.
 
 
 Seeing the errors like the following may suggest that the generated typescript definition has some problems instead of your work does, when seeing those error you will think about if those are errors made by the definition generator and ignore them in the right condition.
