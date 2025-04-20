@@ -79,11 +79,40 @@ Now you can find a `types-gen` folder in your script folder, this contains the g
 
 1. Run `npm install` in this directory.
 2. copy the generated folder `types-gen` to `generated-modules` folder in the root of your project.
-3. Run the script `apply-patch` with `npm run apply-patches`
+3. Run the script `apply-patch` with `npm run apply-patches`, it if fails, probably just open a issue here.
 4. Run `npm install file:./generated-modules/types-gen/minecraft-yarn-definitions/ --no-save`, no-save for now, not sure if I should do this.
 5. Open the `template.ts` file and try start writing your script, you should see TypeScript type hints for all the classes that are available. vscode will automatically generate working imports, but **you should not touch the import statement with `@embedded` namespace.**
 6. Run the script `compile` with npm like step 4 or `npm run watch`
-7. Corresponding javascript file is generated in the `dist` directory, you can link this dist directory to your scripts directory in LB.
+7. Corresponding javascript file is generated in the `dist` directory, you might want to link this dist directory to your scripts directory in LB.
+8. Also enable ScriptHotReloader in LB if you can link the dist directory and use watch mode.
+
+
+### Current limitations
+
+1. it needs to be generated in a development environment (no remapping support has been added atm)
+2. it takes like 7GB of additional memory on it's own and almost 20 min (on my machine) to generate the whole definitions for classes on that jvm
+3. it needs to rely on a external jar (FOSS and currently maintained(technically haven't been update for quite a while) by me), to generate the definitions
+4. it needs some manual maintenance for the ScriptApi specific definitions (like `Settings.int`) or something like that
+5. it has a custom compiler (actually a script that calls `tsc` compiler api and transforms a bit of the script)
+    - subsequently I have not yet figured out a proper source mapping(ts -> js) to be able to use when debugging in chromium. 
+    - The resulted names in js are probably not so beautiful like `const packetEvent = new PacketEvent_1.PacketEvent(TransferOrigin_1.TransferOrigin.RECEIVE, element.packet, false);`.
+6. the definitions are far from perfect for type checking purpose, we might need more considerations for 
+    - nuances of difference of typescript oop model and jvm oop model  
+    eg. 
+        - You cannot have a static method in a interface in typescript but you can have that on jvm classes. 
+        - graaljs bean access could sometimes have a different naming
+        - Having method of the same name as a member variable is not allowed in ts (weird that ts does not allow this, or maybe it is linked to the one bellow)  
+        - overriding a method in the base class and overloading (with different signature) could be problematic. 
+        For a `const entity: LivingEntity = mc.player;`, it will give error of
+        ```
+        Type 'ClientPlayerEntity' is not assignable to type 'LivingEntity'.
+        Types of property 'playSound' are incompatible.
+            Type '(sound: SoundEvent, volume: number, pitch: number) => Unit' is not assignable to type '(sound: SoundEvent) => Unit'.
+        ```
+        in `LivingEntity` the method has a signature of `playSound(sound: SoundEvent): Unit;` and `playSound(sound: SoundEvent, volume: number, pitch: number): Unit;`. Therefore the ts type checker will emit a error, you can only do a `(mc.player as unknown as LivingEntity)` or live with the error (the compiler will still produce a valid js though).
+
+7. I have not yet tried to get it working with webpack or something to allow it use a part of the npm ecosystem (using npm libraries in LiquidBounce scripts).
+8. You will need a bit more prompt than writing kotlin directly when vibe coding.
 
 
 ## Contribution and TODOs
