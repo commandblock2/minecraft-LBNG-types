@@ -230,13 +230,18 @@ ${eventEntries.map((entry) => `on(eventName: "${entry[0]}", handler: (${entry[0]
         throw e;
     }
 }
+const packageName = "minecraft-yarn-definitions";
+const path = ScriptManager_1.ScriptManager.INSTANCE.root.path;
+// @ts-expect-error
+if (Java.type("java.lang.System").getenv("CI_BUILD")) {
+    work(path, packageName);
+    _embedded_1.mc.close();
+}
 script.registerCommand({
     name: "ts-defgen",
     aliases: ["tsgen"],
     parameters: [],
     onExecute() {
-        const packageName = "minecraft-yarn-definitions";
-        const path = ScriptManager_1.ScriptManager.INSTANCE.root.path;
         // @ts-expect-error
         _embedded_1.UnsafeThread.run(() => work(path, packageName));
     }
