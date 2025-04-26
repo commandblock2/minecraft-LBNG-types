@@ -36,16 +36,16 @@ jobs:
       
       - name: Download Latest ts-generator
         run: |
-          mkdir -p lbng/run/scripts
+          mkdir -p lbng/run/LiquidBounce/scripts
           LATEST_RELEASE_URL=$(curl -s https://api.github.com/repos/commandblock2/ts-generator/releases/latest | jq -r '.assets[] | select(.name | endswith(".zip")) | .browser_download_url')
-          curl -L $LATEST_RELEASE_URL -o lbng/run/scripts/ts-generator.zip
-          unzip lbng/run/scripts/ts-generator.zip -d lbng/run/scripts/
+          curl -L $LATEST_RELEASE_URL -o lbng/run/LiquidBounce/scripts/ts-generator.zip
+          unzip lbng/run/LiquidBounce/scripts/ts-generator.zip -d lbng/run/LiquidBounce/scripts/
           # Assuming the JAR file is inside the zip, find and rename it
-          find lbng/run/scripts/ -name "*.jar" -exec mv {} lbng/run/scripts/ts-generator.jar \; || echo "No JAR file found in the zip, check contents"
+          find lbng/run/LiquidBounce/scripts/ -name "*.jar" -exec mv {} lbng/run/LiquidBounce/scripts/ts-generator.jar \; || echo "No JAR file found in the zip, check contents"
           
       - name: Copy ts-defgen.js to LiquidBounce scripts
         run: |
-          cp LBNG-script/ts-defgen.js lbng/run/scripts/
+          cp LBNG-script/ts-defgen.js lbng/run/LiquidBounce/scripts/
           
       - name: Install Xvfb
         run: sudo apt-get install -y xvfb
@@ -61,7 +61,7 @@ jobs:
       - name: Copy Generated Definitions
         run: |
           mkdir -p generated-modules
-          cp -r lbng/run/scripts/types-gen generated-modules/
+          cp -r lbng/run/LiquidBounce/scripts/types-gen generated-modules/
           
       - name: Apply Patches
         run: npm run apply-patches
