@@ -34,11 +34,14 @@ jobs:
           cd lbng
           git checkout 451cb31e9bf093fe07f9b28202bc2471921ea13d  # Version 0.29.0 release
       
-      - name: Download Latest ts-generator JAR
+      - name: Download Latest ts-generator
         run: |
           mkdir -p lbng/run/scripts
-          LATEST_RELEASE_URL=$(curl -s https://api.github.com/repos/commandblock2/ts-generator/releases/latest | jq -r '.assets[] | select(.name | endswith(".jar")) | .browser_download_url')
-          curl -L $LATEST_RELEASE_URL -o lbng/run/scripts/ts-generator.jar
+          LATEST_RELEASE_URL=$(curl -s https://api.github.com/repos/commandblock2/ts-generator/releases/latest | jq -r '.assets[] | select(.name | endswith(".zip")) | .browser_download_url')
+          curl -L $LATEST_RELEASE_URL -o lbng/run/scripts/ts-generator.zip
+          unzip lbng/run/scripts/ts-generator.zip -d lbng/run/scripts/
+          # Assuming the JAR file is inside the zip, find and rename it
+          find lbng/run/scripts/ -name "*.jar" -exec mv {} lbng/run/scripts/ts-generator.jar \; || echo "No JAR file found in the zip, check contents"
           
       - name: Copy ts-defgen.js to LiquidBounce scripts
         run: |
