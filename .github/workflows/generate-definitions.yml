@@ -1,0 +1,79 @@
+name: Generate TypeScript Definitions
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'  # Updated to JDK 21
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          
+      - name: Install dependencies
+        run: npm install
+          
+      - name: Clone LiquidBounce NextGen
+        run: |
+          git clone https://github.com/CCBlueX/LiquidBounce.git lbng
+          cd lbng
+          git checkout 451cb31e9bf093fe07f9b28202bc2471921ea13d  # Version 0.29.0 release
+      
+      - name: Download Latest ts-generator JAR
+        run: |
+          mkdir -p lbng/run/scripts
+          LATEST_RELEASE_URL=$(curl -s https://api.github.com/repos/commandblock2/ts-generator/releases/latest | jq -r '.assets[] | select(.name | endswith(".jar")) | .browser_download_url')
+          curl -L $LATEST_RELEASE_URL -o lbng/run/scripts/ts-generator.jar
+          
+      - name: Copy ts-defgen.js to LiquidBounce scripts
+        run: |
+          cp LBNG-script/ts-defgen.js lbng/run/scripts/
+          
+      - name: Run LiquidBounce with Gradle
+        working-directory: ./lbng
+        env:
+          CI_BUILD: "true"  # Set the CI_BUILD flag to auto-execute ts-defgen
+        run: |
+          chmod +x ./gradlew
+          ./gradlew runClient
+          
+      - name: Copy Generated Definitions
+        run: |
+          mkdir -p generated-modules
+          cp -r lbng/run/scripts/types-gen generated-modules/
+          
+      - name: Apply Patches
+        run: npm run apply-patches
+        
+      - name: Install Generated Definitions
+        run: npm install file:./generated-modules/types-gen/minecraft-yarn-definitions/ --no-save
+        
+      - name: Compile TypeScript
+        run: npm run compile
+        
+      - name: Upload TypeScript Definitions
+        uses: actions/upload-artifact@v3
+        with:
+          name: typescript-definitions
+          path: generated-modules/types-gen
+          
+      - name: Upload Compiled Scripts
+        uses: actions/upload-artifact@v3
+        with:
+          name: compiled-scripts
+          path: dist
