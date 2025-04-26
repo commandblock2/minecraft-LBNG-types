@@ -47,13 +47,16 @@ jobs:
         run: |
           cp LBNG-script/ts-defgen.js lbng/run/scripts/
           
+      - name: Install Xvfb
+        run: sudo apt-get install -y xvfb
+
       - name: Run LiquidBounce with Gradle
         working-directory: ./lbng
         env:
           CI_BUILD: "true"  # Set the CI_BUILD flag to auto-execute ts-defgen
         run: |
           chmod +x ./gradlew
-          ./gradlew runClient -Dfabric.headless=true
+          xvfb-run --auto-servernum --server-args="-screen 0 1280x720x24" ./gradlew runClient -Dfabric.headless=true
           
       - name: Copy Generated Definitions
         run: |
