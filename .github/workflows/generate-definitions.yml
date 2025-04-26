@@ -53,7 +53,7 @@ jobs:
           CI_BUILD: "true"  # Set the CI_BUILD flag to auto-execute ts-defgen
         run: |
           chmod +x ./gradlew
-          ./gradlew runClient
+          ./gradlew runClient -Dfabric.headless=true
           
       - name: Copy Generated Definitions
         run: |
