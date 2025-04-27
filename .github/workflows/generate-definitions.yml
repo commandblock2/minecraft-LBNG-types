@@ -40,8 +40,8 @@ jobs:
           LATEST_RELEASE_URL=$(curl -s https://api.github.com/repos/commandblock2/ts-generator/releases/latest | jq -r '.assets[] | select(.name | endswith(".zip")) | .browser_download_url')
           curl -L $LATEST_RELEASE_URL -o lbng/run/LiquidBounce/scripts/ts-generator.zip
           unzip lbng/run/LiquidBounce/scripts/ts-generator.zip -d lbng/run/LiquidBounce/scripts/
-          # Assuming the JAR file is inside the zip, find and rename it
-          find lbng/run/LiquidBounce/scripts/ -name "*.jar" -exec mv {} lbng/run/LiquidBounce/scripts/ts-generator.jar \; || echo "No JAR file found in the zip, check contents"
+          # Look specifically for the main jar file (excluding source jars)
+          find lbng/run/LiquidBounce/scripts/ -name "*.jar" -not -name "*-sources.jar" -not -name "*-src.jar" -exec mv {} lbng/run/LiquidBounce/scripts/ts-generator.jar \; || echo "Main JAR file not found in the zip, check contents"
           
       - name: Copy ts-defgen.js to LiquidBounce scripts
         run: |
