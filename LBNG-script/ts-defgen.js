@@ -85,7 +85,7 @@ const script = _embedded_1.registerScript.apply({
 });
 function work(path, packageName) {
     try {
-        const loader = createClassLoaderFromJar(path + "/ts-generator-1.1.1.jar");
+        const loader = createClassLoaderFromJar(path + "/ts-generator.jar");
         const NPMGen = loadClassFromJar(loader, "me.commandblock2.tsGenerator.NPMPackageGenerator");
         const TsGen = loadClassFromJar(loader, "me.ntrrgc.tsGenerator.TypeScriptGenerator");
         const VoidType = loadClassFromJar(loader, "me.ntrrgc.tsGenerator.VoidType");

@@ -109,7 +109,7 @@ const script = registerScript.apply({
 function work(path: string, packageName: string) {
     try {
         const loader = createClassLoaderFromJar(
-            path + "/ts-generator-1.1.1.jar"
+            path + "/ts-generator.jar"
         );
         const NPMGen = loadClassFromJar(
             loader,
