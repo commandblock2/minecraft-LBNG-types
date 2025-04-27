@@ -42,7 +42,7 @@ jobs:
           unzip lbng/run/LiquidBounce/scripts/ts-generator.zip -d lbng/run/LiquidBounce/scripts/
           # Look specifically for the main jar file (excluding source jars)
           find lbng/run/LiquidBounce/scripts/ -name "*.jar" -not -name "*-sources.jar" -not -name "*-src.jar" -exec mv {} lbng/run/LiquidBounce/scripts/ts-generator.jar \; || echo "Main JAR file not found in the zip, check contents"
-          
+
       - name: Copy ts-defgen.js to LiquidBounce scripts
         run: |
           cp LBNG-script/ts-defgen.js lbng/run/LiquidBounce/scripts/
@@ -56,7 +56,7 @@ jobs:
           CI_BUILD: "true"  # Set the CI_BUILD flag to auto-execute ts-defgen
         run: |
           chmod +x ./gradlew
-          xvfb-run --auto-servernum --server-args="-screen 0 1280x720x24" ./gradlew runClient -Dfabric.headless=true
+          timeout 60m xvfb-run --auto-servernum --server-args="-screen 0 1280x720x24" ./gradlew runClient -Dfabric.headless=true || exit 0
           
       - name: Copy Generated Definitions
         run: |
