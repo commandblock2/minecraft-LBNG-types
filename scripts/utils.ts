@@ -46,7 +46,7 @@ export async function initGitRepo(workDir: string) {
     // Initialize new git repo
     execSync('git init', { cwd: workDir })
     execSync('git add .', { cwd: workDir })
-    execSync('git commit -m "Initial commit"', { cwd: workDir, stdio: 'ignore' })
+    execSync('git -c user.name="CI" -c user.email="ci@example.com" commit -m "Initial commit"', { cwd: workDir, stdio: 'ignore' })
 }
 
 export async function cleanupGitRepo(workDir: string) {
@@ -66,7 +66,7 @@ export async function applyPatchWithFallback(
             stdio: 'pipe' // Capture output
         })
         
-        execSync(`git commit -m "${commitMessage}"`, { 
+        execSync(`git -c user.name="CI" -c user.email="ci@example.com" commit -m "${commitMessage}"`, { 
             cwd: workDir,
             encoding: 'utf-8',
             stdio: 'pipe'
@@ -82,7 +82,7 @@ export async function applyPatchWithFallback(
                     stdio: 'pipe'
                 })
                 
-                execSync(`git commit -m "${commitMessage}"`, { 
+                execSync(`git -c user.name="CI" -c user.email="ci@example.com" commit -m "${commitMessage}"`, { 
                     cwd: workDir,
                     encoding: 'utf-8',
                     stdio: 'pipe'

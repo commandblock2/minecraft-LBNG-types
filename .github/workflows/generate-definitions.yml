@@ -70,7 +70,9 @@ jobs:
         run: npm install file:./generated-modules/types-gen/minecraft-yarn-definitions/ --no-save
         
       - name: Compile TypeScript
-        run: npm run compile
+        run: |
+          mkdir -p dist
+          npm run compile
         
       - name: Upload TypeScript Definitions
         uses: actions/upload-artifact@v4
