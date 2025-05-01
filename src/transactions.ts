@@ -1,28 +1,5 @@
-import {
-    Setting,
-    Vec3i,
-    Vec3d,
-    MathHelper,
-    BlockPos,
-    Hand,
-    RotationAxis,
-    mc,
-    Client,
-    RotationUtil,
-    ItemUtil,
-    NetworkUtil,
-    InteractionUtil,
-    BlockUtil,
-    MovementUtil,
-    ReflectionUtil,
-    ParameterValidator,
-    UnsafeThread,
-    localStorage,
-    registerScript
-} from "@embedded";
 import { CommonPingS2CPacket } from "@minecraft-yarn-definitions/types/net/minecraft/network/packet/s2c/common/CommonPingS2CPacket";
-/* eslint-enable unused-imports/no-unused-imports */
-// DO NOT TOUCH ANYTHING ABOVE THIS LINE
+
 
 // Define the TransactionEntry interface for storing packet data
 interface TransactionEntry {

@@ -1,25 +1,3 @@
-import {
-    Setting,
-    Vec3i,
-    Vec3d,
-    MathHelper,
-    BlockPos,
-    Hand,
-    RotationAxis,
-    mc,
-    Client,
-    RotationUtil,
-    ItemUtil,
-    NetworkUtil,
-    InteractionUtil,
-    BlockUtil,
-    MovementUtil,
-    ReflectionUtil,
-    ParameterValidator,
-    UnsafeThread,
-    localStorage,
-    registerScript
-} from "@embedded";
 import { TransferOrigin } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/event/events/TransferOrigin";
 import { ClientPlayerInteractionManager } from "@minecraft-yarn-definitions/types/net/minecraft/client/network/ClientPlayerInteractionManager";
 import { Entity } from "@minecraft-yarn-definitions/types/net/minecraft/entity/Entity";
@@ -32,9 +10,6 @@ import { PlayerActionC2SPacket$Action } from "@minecraft-yarn-definitions/types/
 import { PlayerInteractEntityC2SPacket } from "@minecraft-yarn-definitions/types/net/minecraft/network/packet/c2s/play/PlayerInteractEntityC2SPacket";
 import { EntitySpawnS2CPacket } from "@minecraft-yarn-definitions/types/net/minecraft/network/packet/s2c/play/EntitySpawnS2CPacket";
 import { PlayerListS2CPacket } from "@minecraft-yarn-definitions/types/net/minecraft/network/packet/s2c/play/PlayerListS2CPacket";
-/* eslint-enable unused-imports/no-unused-imports */
-// DO NOT TOUCH ANYTHING ABOVE THIS LINE, also not sure why it didn't work
-
 
 const script = registerScript.apply({
     name: "vanilla-aura",

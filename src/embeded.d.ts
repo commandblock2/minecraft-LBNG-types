@@ -1,27 +1,27 @@
-declare module "@embedded" {
+import { ScriptSetting } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting";
+import { Vec3i } from "@minecraft-yarn-definitions/types/net/minecraft/util/math/Vec3i";
+import { Vec3d } from "@minecraft-yarn-definitions/types/net/minecraft/util/math/Vec3d";
+import { MathHelper } from "@minecraft-yarn-definitions/types/net/minecraft/util/math/MathHelper";
+import { BlockPos } from "@minecraft-yarn-definitions/types/net/minecraft/util/math/BlockPos";
+import { Hand } from "@minecraft-yarn-definitions/types/net/minecraft/util/Hand";
+import { RotationAxis } from "@minecraft-yarn-definitions/types/net/minecraft/util/math/RotationAxis";
+import { MinecraftClient } from "@minecraft-yarn-definitions/types/net/minecraft/client/MinecraftClient";
+import { ScriptClient } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/api/ScriptClient";
+import { ScriptRotationUtil } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/api/ScriptRotationUtil";
+import { ScriptItemUtil } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/api/ScriptItemUtil";
+import { ScriptNetworkUtil } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/api/ScriptNetworkUtil";
+import { ScriptInteractionUtil } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/api/ScriptInteractionUtil";
+import { ScriptBlockUtil } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/api/ScriptBlockUtil";
+import { ScriptMovementUtil } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/api/ScriptMovementUtil";
+import { ScriptReflectionUtil } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/api/ScriptReflectionUtil";
+import { ScriptParameterValidator } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/api/ScriptParameterValidator";
+import { ScriptUnsafeThread } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/api/ScriptUnsafeThread";
+import { ConcurrentHashMap } from "@minecraft-yarn-definitions/types/java/util/concurrent/ConcurrentHashMap";
+import { PolyglotScript$RegisterScript } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript$RegisterScript";
+
+
+declare global {
     // imports
-    import { ScriptSetting } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting";
-    import { Vec3i } from "@minecraft-yarn-definitions/types/net/minecraft/util/math/Vec3i";
-    import { Vec3d } from "@minecraft-yarn-definitions/types/net/minecraft/util/math/Vec3d";
-    import { MathHelper } from "@minecraft-yarn-definitions/types/net/minecraft/util/math/MathHelper";
-    import { BlockPos } from "@minecraft-yarn-definitions/types/net/minecraft/util/math/BlockPos";
-    import { Hand } from "@minecraft-yarn-definitions/types/net/minecraft/util/Hand";
-    import { RotationAxis } from "@minecraft-yarn-definitions/types/net/minecraft/util/math/RotationAxis";
-    import { MinecraftClient } from "@minecraft-yarn-definitions/types/net/minecraft/client/MinecraftClient";
-    import { ScriptClient } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/api/ScriptClient";
-    import { ScriptRotationUtil } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/api/ScriptRotationUtil";
-    import { ScriptItemUtil } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/api/ScriptItemUtil";
-    import { ScriptNetworkUtil } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/api/ScriptNetworkUtil";
-    import { ScriptInteractionUtil } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/api/ScriptInteractionUtil";
-    import { ScriptBlockUtil } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/api/ScriptBlockUtil";
-    import { ScriptMovementUtil } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/api/ScriptMovementUtil";
-    import { ScriptReflectionUtil } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/api/ScriptReflectionUtil";
-    import { ScriptParameterValidator } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/api/ScriptParameterValidator";
-    import { ScriptUnsafeThread } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/api/ScriptUnsafeThread";
-    import { ConcurrentHashMap } from "@minecraft-yarn-definitions/types/java/util/concurrent/ConcurrentHashMap";
-    import { PolyglotScript$RegisterScript } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript$RegisterScript";
-    
-    
     // exports
         export const Setting: ScriptSetting;
     
@@ -64,4 +64,5 @@ declare module "@embedded" {
         export { RotationAxis };
     
     }
-    
+
+export {};

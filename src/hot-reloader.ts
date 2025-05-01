@@ -1,25 +1,3 @@
-import {
-    Setting,
-    Vec3i,
-    Vec3d,
-    MathHelper,
-    BlockPos,
-    Hand,
-    RotationAxis,
-    mc,
-    Client,
-    RotationUtil,
-    ItemUtil,
-    NetworkUtil,
-    InteractionUtil,
-    BlockUtil,
-    MovementUtil,
-    ReflectionUtil,
-    ParameterValidator,
-    UnsafeThread,
-    localStorage,
-    registerScript
-} from "@embedded";
 import { ScriptManager } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/ScriptManager";
 import { HttpServer } from "@minecraft-yarn-definitions/types/com/sun/net/httpserver/HttpServer";
 import { InetSocketAddress } from "@minecraft-yarn-definitions/types/java/net/InetSocketAddress";

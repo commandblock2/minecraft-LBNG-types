@@ -1,25 +1,3 @@
-import {
-    Setting,
-    Vec3i,
-    Vec3d,
-    MathHelper,
-    BlockPos,
-    Hand,
-    RotationAxis,
-    mc,
-    Client,
-    RotationUtil,
-    ItemUtil,
-    NetworkUtil,
-    InteractionUtil,
-    BlockUtil,
-    MovementUtil,
-    ReflectionUtil,
-    ParameterValidator,
-    UnsafeThread,
-    localStorage,
-    registerScript
-} from "@embedded";
 import { GameProfile } from "@minecraft-yarn-definitions/types/com/mojang/authlib/GameProfile";
 import { UUID } from "@minecraft-yarn-definitions/types/java/util/UUID";
 import { PlayerListS2CPacket } from "@minecraft-yarn-definitions/types/net/minecraft/network/packet/s2c/play/PlayerListS2CPacket";
@@ -27,8 +5,6 @@ import { PlayerRemoveS2CPacket } from "@minecraft-yarn-definitions/types/net/min
 import { ModuleAntiBot } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/features/module/modules/misc/antibot/ModuleAntiBot"
 import { PlayerEntity } from "@minecraft-yarn-definitions/types/net/minecraft/entity/player/PlayerEntity";
 import { Throwable } from "@minecraft-yarn-definitions/types/java/lang/Throwable";
-/* eslint-enable unused-imports/no-unused-imports */
-// DO NOT TOUCH ANYTHING ABOVE THIS LINE, also not sure why it didn't work
 
 
 const script = registerScript.apply({

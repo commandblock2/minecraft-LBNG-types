@@ -1,29 +1,4 @@
-import {
-    Setting,
-    Vec3i,
-    Vec3d,
-    MathHelper,
-    BlockPos,
-    Hand,
-    RotationAxis,
-    mc,
-    Client,
-    RotationUtil,
-    ItemUtil,
-    NetworkUtil,
-    InteractionUtil,
-    BlockUtil,
-    MovementUtil,
-    ReflectionUtil,
-    ParameterValidator,
-    UnsafeThread,
-    localStorage,
-    registerScript
-} from "@embedded";
 import { EntityVelocityUpdateS2CPacket } from "@minecraft-yarn-definitions/types/net/minecraft/network/packet/s2c/play/EntityVelocityUpdateS2CPacket";
-/* eslint-enable unused-imports/no-unused-imports */
-// DO NOT TOUCH ANYTHING ABOVE THIS LINE, also not sure why it didn't work
-
 
 const script = registerScript.apply({
     name: "vectorized-velocity-xz",
