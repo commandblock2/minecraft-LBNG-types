@@ -11,6 +11,8 @@ https://github.com/user-attachments/assets/a58c0e17-4eb4-4ce6-9c4a-04378f31e226
 - **redistribute the game itself**
 - **guarentee the correctness of the generated definition**
 
+**The definition is generated from reflection, which is deobfuscated using the yarn mapping, in LBNG's context.**
+
 ---
 
 This repo contains 
