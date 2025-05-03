@@ -1,23 +1,24 @@
-import { URLClassLoader } from "@minecraft-yarn-definitions/types/java/net/URLClassLoader";
-import { File } from "@minecraft-yarn-definitions/types/java/io/File";
-import { URL } from "@minecraft-yarn-definitions/types/java/net/URL";
-import { Thread } from "@minecraft-yarn-definitions/types/java/lang/Thread";
-import { Paths } from "@minecraft-yarn-definitions/types/java/nio/file/Paths";
+import { URLClassLoader } from "@jvm/types/java/net/URLClassLoader";
+import { File } from "@jvm/types/java/io/File";
+import { URL } from "@jvm/types/java/net/URL";
+import { Thread } from "@jvm/types/java/lang/Thread";
+import { Paths } from "@jvm/types/java/nio/file/Paths";
 // @ts-expect-error
-import { HashMap } from "@minecraft-yarn-definitions/types/java/util/HashMap";
+import { HashMap } from "@jvm/types/java/util/HashMap";
 // @ts-expect-error
-import { ArrayList } from "@minecraft-yarn-definitions/types/java/util/ArrayList";
-import { JvmClassMappingKt } from "@minecraft-yarn-definitions/types/kotlin/jvm/JvmClassMappingKt";
-import { Class } from "@minecraft-yarn-definitions/types/java/lang/Class";
-import { ScriptModule } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule";
-import { Object as JavaObject } from "@minecraft-yarn-definitions/types/java/lang/Object";
+import { ArrayList } from "@jvm/types/java/util/ArrayList";
+import { JvmClassMappingKt } from "@jvm/types/kotlin/jvm/JvmClassMappingKt";
+import { Class } from "@jvm/types/java/lang/Class";
+import { ScriptModule } from "@jvm/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule";
+import { Object as JavaObject } from "@jvm/types/java/lang/Object";
 // @ts-expect-error
-import { Map as JavaMap } from "@minecraft-yarn-definitions/types/java/util/Map";
-import { Throwable } from "@minecraft-yarn-definitions/types/java/lang/Throwable";
-import { ClassPath } from "@minecraft-yarn-definitions/types/com/google/common/reflect/ClassPath";
-import { ScriptManager } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/ScriptManager";
-import { Exception } from "@minecraft-yarn-definitions/types/java/lang/Exception";
+import { Map as JavaMap } from "@jvm/types/java/util/Map";
+import { Throwable } from "@jvm/types/java/lang/Throwable";
+import { ClassPath } from "@jvm/types/com/google/common/reflect/ClassPath";
+import { ScriptManager } from "@jvm/types/net/ccbluex/liquidbounce/script/ScriptManager";
+import { Exception } from "@jvm/types/java/lang/Exception";
 
+import { FuckYou } from "@jvm/types/net/ccbluex/liquidbounce/script/bindings/features/FuckYou"
 
 // type: array
 /** @type any[] */
@@ -270,7 +271,7 @@ ${eventEntries.map((entry: any) => `on(eventName: "${entry[0]}", handler: (${ent
     }
 }
 
-const packageName = "minecraft-yarn-definitions"
+const packageName = "jvm"
 const path = ScriptManager.INSTANCE.root.path;
 
 // @ts-expect-error
@@ -286,9 +287,6 @@ script.registerCommand({
     ],
     onExecute() {
 
-        
-        
-        // @ts-expect-error
         UnsafeThread.run(() => work(path, packageName));
     }
 });

@@ -5,10 +5,10 @@ function __require(path) {
         return globalThis
     }
 
-    if (path.startsWith("@minecraft-yarn-definitions/types/")) {
+    if (path.startsWith("@jvm/types/")) {
         return {
             [path.substring(path.lastIndexOf("/") + 1)]: Java.type(path
-                .replaceAll("@minecraft-yarn-definitions/types/", "")
+                .replaceAll("@jvm/types/", "")
                 .replaceAll("/", ".")
             )
         }
@@ -24,19 +24,19 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const _embedded_1 = __require("@embedded");
 /* eslint-enable unused-imports/no-unused-imports */
 // DO NOT TOUCH ANYTHING ABOVE THIS LINE, also not sure why it didn't work
-const URLClassLoader_1 = __require("@minecraft-yarn-definitions/types/java/net/URLClassLoader");
-const File_1 = __require("@minecraft-yarn-definitions/types/java/io/File");
-const Thread_1 = __require("@minecraft-yarn-definitions/types/java/lang/Thread");
-const Paths_1 = __require("@minecraft-yarn-definitions/types/java/nio/file/Paths");
+const URLClassLoader_1 = __require("@jvm/types/java/net/URLClassLoader");
+const File_1 = __require("@jvm/types/java/io/File");
+const Thread_1 = __require("@jvm/types/java/lang/Thread");
+const Paths_1 = __require("@jvm/types/java/nio/file/Paths");
 // @ts-expect-error
-const HashMap_1 = __require("@minecraft-yarn-definitions/types/java/util/HashMap");
+const HashMap_1 = __require("@jvm/types/java/util/HashMap");
 // @ts-expect-error
-const ArrayList_1 = __require("@minecraft-yarn-definitions/types/java/util/ArrayList");
-const JvmClassMappingKt_1 = __require("@minecraft-yarn-definitions/types/kotlin/jvm/JvmClassMappingKt");
-const Class_1 = __require("@minecraft-yarn-definitions/types/java/lang/Class");
-const ScriptModule_1 = __require("@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule");
-const ClassPath_1 = __require("@minecraft-yarn-definitions/types/com/google/common/reflect/ClassPath");
-const ScriptManager_1 = __require("@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/ScriptManager");
+const ArrayList_1 = __require("@jvm/types/java/util/ArrayList");
+const JvmClassMappingKt_1 = __require("@jvm/types/kotlin/jvm/JvmClassMappingKt");
+const Class_1 = __require("@jvm/types/java/lang/Class");
+const ScriptModule_1 = __require("@jvm/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule");
+const ClassPath_1 = __require("@jvm/types/com/google/common/reflect/ClassPath");
+const ScriptManager_1 = __require("@jvm/types/net/ccbluex/liquidbounce/script/ScriptManager");
 // type: array
 /** @type any[] */
 const globalEntries = Object.entries(globalThis);

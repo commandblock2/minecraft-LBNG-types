@@ -1,15 +1,15 @@
-import { ScriptManager } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/ScriptManager";
-import { HttpServer } from "@minecraft-yarn-definitions/types/com/sun/net/httpserver/HttpServer";
-import { InetSocketAddress } from "@minecraft-yarn-definitions/types/java/net/InetSocketAddress";
-import { HttpHandler } from "@minecraft-yarn-definitions/types/com/sun/net/httpserver/HttpHandler";
-import { HttpExchange } from "@minecraft-yarn-definitions/types/com/sun/net/httpserver/HttpExchange";
-import { InputStream } from "@minecraft-yarn-definitions/types/java/io/InputStream";
-import { InputStreamReader } from "@minecraft-yarn-definitions/types/java/io/InputStreamReader";
-import { BufferedReader } from "@minecraft-yarn-definitions/types/java/io/BufferedReader";
-import { Unit } from "@minecraft-yarn-definitions/types/kotlin/Unit";
-import { PolyglotScript } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/PolyglotScript";
-import { Function0 } from "@minecraft-yarn-definitions/types/kotlin/jvm/functions/Function0";
-import { ClientModule } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/features/module/ClientModule";
+import { ScriptManager } from "@jvm/types/net/ccbluex/liquidbounce/script/ScriptManager";
+import { HttpServer } from "@jvm/types/com/sun/net/httpserver/HttpServer";
+import { InetSocketAddress } from "@jvm/types/java/net/InetSocketAddress";
+import { HttpHandler } from "@jvm/types/com/sun/net/httpserver/HttpHandler";
+import { HttpExchange } from "@jvm/types/com/sun/net/httpserver/HttpExchange";
+import { InputStream } from "@jvm/types/java/io/InputStream";
+import { InputStreamReader } from "@jvm/types/java/io/InputStreamReader";
+import { BufferedReader } from "@jvm/types/java/io/BufferedReader";
+import { Unit } from "@jvm/types/kotlin/Unit";
+import { PolyglotScript } from "@jvm/types/net/ccbluex/liquidbounce/script/PolyglotScript";
+import { Function0 } from "@jvm/types/kotlin/jvm/functions/Function0";
+import { ClientModule } from "@jvm/types/net/ccbluex/liquidbounce/features/module/ClientModule";
 
 const script = registerScript.apply({
     name: "hot-reloader",

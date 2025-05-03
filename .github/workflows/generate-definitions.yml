@@ -62,17 +62,17 @@ jobs:
         run: |
           mkdir -p generated-modules
           cp -r lbng/run/LiquidBounce/scripts/types-gen generated-modules/
-          
+
       - name: Apply Patches
         run: npm run apply-patches
         
       - name: Install Generated Definitions
-        run: npm install file:./generated-modules/types-gen/minecraft-yarn-definitions/ --no-save
+        run: npm install file:./generated-modules/types-gen/jvm/ --no-save
         
-      - name: Compile TypeScript
-        run: |
-          mkdir -p dist
-          npm run compile
+      # - name: Compile TypeScript
+      #   run: |
+      #     mkdir -p dist
+      #     npm run compile
         
       - name: Upload TypeScript Definitions
         uses: actions/upload-artifact@v4

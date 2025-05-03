@@ -7,10 +7,10 @@ Subject: [PATCH] feat-full-event-interface
  .../bindings/features/ScriptModule.d.ts       | 222 ++++++++++++++++++
  1 file changed, 222 insertions(+)
 
-diff --git a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule.d.ts b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule.d.ts
+diff --git a/@jvm/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule.d.ts b/@jvm/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule.d.ts
 index 14f3e36a..a5542be6 100644
---- a/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule.d.ts
-+++ b/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule.d.ts
+--- a/@jvm/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule.d.ts
++++ b/@jvm/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule.d.ts
 @@ -18,6 +18,117 @@ import type { PolyglotScript } from '../../../../../../net/ccbluex/liquidbounce/
  import type { Supplier } from '../../../../../../java/util/function/Supplier.d.ts'
  import type { Unit } from '../../../../../../kotlin/Unit.d.ts'

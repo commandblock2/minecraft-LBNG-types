@@ -1,4 +1,4 @@
-import { CommonPingS2CPacket } from "@minecraft-yarn-definitions/types/net/minecraft/network/packet/s2c/common/CommonPingS2CPacket";
+import { CommonPingS2CPacket } from "@jvm/types/net/minecraft/network/packet/s2c/common/CommonPingS2CPacket";
 
 
 // Define the TransactionEntry interface for storing packet data

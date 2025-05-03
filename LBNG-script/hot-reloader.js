@@ -5,10 +5,10 @@ function __require(path) {
         return globalThis
     }
 
-    if (path.startsWith("@minecraft-yarn-definitions/types/")) {
+    if (path.startsWith("@jvm/types/")) {
         return {
             [path.substring(path.lastIndexOf("/") + 1)]: Java.type(path
-                .replaceAll("@minecraft-yarn-definitions/types/", "")
+                .replaceAll("@jvm/types/", "")
                 .replaceAll("/", ".")
             )
         }
@@ -20,11 +20,11 @@ var exports = {}
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const _embedded_1 = __require("@embedded");
-const ScriptManager_1 = __require("@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/ScriptManager");
-const HttpServer_1 = __require("@minecraft-yarn-definitions/types/com/sun/net/httpserver/HttpServer");
-const InetSocketAddress_1 = __require("@minecraft-yarn-definitions/types/java/net/InetSocketAddress");
-const InputStreamReader_1 = __require("@minecraft-yarn-definitions/types/java/io/InputStreamReader");
-const BufferedReader_1 = __require("@minecraft-yarn-definitions/types/java/io/BufferedReader");
+const ScriptManager_1 = __require("@jvm/types/net/ccbluex/liquidbounce/script/ScriptManager");
+const HttpServer_1 = __require("@jvm/types/com/sun/net/httpserver/HttpServer");
+const InetSocketAddress_1 = __require("@jvm/types/java/net/InetSocketAddress");
+const InputStreamReader_1 = __require("@jvm/types/java/io/InputStreamReader");
+const BufferedReader_1 = __require("@jvm/types/java/io/BufferedReader");
 const script = _embedded_1.registerScript.apply({
     name: "hot-reloader",
     version: "1.0.0",
