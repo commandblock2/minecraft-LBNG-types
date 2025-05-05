@@ -69,10 +69,10 @@ jobs:
       - name: Install Generated Definitions
         run: npm install file:./generated-modules/types-gen/jvm/ --no-save
         
-      # - name: Compile TypeScript
-      #   run: |
-      #     mkdir -p dist
-      #     npm run compile
+      - name: Compile TypeScript
+        run: |
+          mkdir -p dist
+          tsc
         
       - name: Upload TypeScript Definitions
         uses: actions/upload-artifact@v4
