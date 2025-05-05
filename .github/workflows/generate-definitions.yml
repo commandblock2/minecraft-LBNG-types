@@ -30,9 +30,9 @@ jobs:
           
       - name: Clone LiquidBounce NextGen
         run: |
-          git clone https://github.com/CCBlueX/LiquidBounce.git lbng
+          git clone https://github.com/commandblock2/LiquidBounce.git lbng
           cd lbng
-          git checkout 451cb31e9bf093fe07f9b28202bc2471921ea13d  # Version 0.29.0 release
+          git checkout 65c3c9385e92fb68924068ff86dbe160bd0b900e  # Version 0.29.0 release
       
       - name: Download Latest ts-generator
         run: |
