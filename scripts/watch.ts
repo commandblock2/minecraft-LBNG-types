@@ -157,7 +157,7 @@ async function watchDirectoryForHotReload(dirPath: string, options: {
 
 // Parse command line arguments
 const args = process.argv.slice(2);
-const directoryToWatch = args[0] || '.';  // Default to current directory if none specified
+const directoryToWatch = args[0] || './dist';  // Default to dist directory if none specified
 
 // Start the watcher
 watchDirectoryForHotReload(directoryToWatch, {
