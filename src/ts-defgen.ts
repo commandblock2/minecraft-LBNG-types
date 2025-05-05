@@ -18,8 +18,6 @@ import { ClassPath } from "@jvm/types/com/google/common/reflect/ClassPath";
 import { ScriptManager } from "@jvm/types/net/ccbluex/liquidbounce/script/ScriptManager";
 import { Exception } from "@jvm/types/java/lang/Exception";
 
-import { FuckYou } from "@jvm/types/net/ccbluex/liquidbounce/script/bindings/features/FuckYou"
-
 // type: array
 /** @type any[] */
 const globalEntries = Object.entries(globalThis);
@@ -286,7 +284,7 @@ script.registerCommand({
     parameters: [
     ],
     onExecute() {
-
+        // @ts-expect-error
         UnsafeThread.run(() => work(path, packageName));
     }
 });
