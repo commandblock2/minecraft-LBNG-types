@@ -9,7 +9,8 @@
     "apply-patches": "npx ts-node scripts/apply-patches.ts patches generated-modules/types-gen",
     "apply-patches-iterative": "npx ts-node scripts/apply-patches-iterative.ts patches generated-modules/types-gen",
     "generate-patches": "npx ts-node scripts/generate-patches.ts patches generated-modules/types-gen",
-    "rebuild-patches": "npm run generate-patches && npm run apply-patches"
+    "rebuild-patches": "npm run generate-patches && npm run apply-patches",
+    "watch": "ts-node ./scripts/watch.ts dist/"
   },
   "dependencies": {
     "chokidar": "^4.0.3",
