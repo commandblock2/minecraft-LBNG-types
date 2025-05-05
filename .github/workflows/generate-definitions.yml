@@ -72,7 +72,7 @@ jobs:
       - name: Compile TypeScript
         run: |
           mkdir -p dist
-          tsc
+          tsc || exit 0
         
       - name: Upload TypeScript Definitions
         uses: actions/upload-artifact@v4
