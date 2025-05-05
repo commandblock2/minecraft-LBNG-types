@@ -1,32 +1,8 @@
-import {
-    Setting,
-    Vec3i,
-    Vec3d,
-    MathHelper,
-    BlockPos,
-    Hand,
-    RotationAxis,
-    mc,
-    Client,
-    RotationUtil,
-    ItemUtil,
-    NetworkUtil,
-    InteractionUtil,
-    BlockUtil,
-    MovementUtil,
-    ReflectionUtil,
-    ParameterValidator,
-    UnsafeThread,
-    localStorage,
-    registerScript
-} from "@embedded";
-import { Throwable } from "@minecraft-yarn-definitions/types/java/lang/Throwable";
-import { EventManager } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/event/EventManager";
-import { PacketEvent } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/event/events/PacketEvent";
-import { TransferOrigin } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/event/events/TransferOrigin";
-import { Packet } from "@minecraft-yarn-definitions/types/net/minecraft/network/packet/Packet";
-/* eslint-enable unused-imports/no-unused-imports */
-// DO NOT TOUCH ANYTHING ABOVE THIS LINE, also not sure why it didn't work
+import { Throwable } from "@jvm/types/java/lang/Throwable";
+import { EventManager } from "@jvm/types/net/ccbluex/liquidbounce/event/EventManager";
+import { PacketEvent } from "@jvm/types/net/ccbluex/liquidbounce/event/events/PacketEvent";
+import { TransferOrigin } from "@jvm/types/net/ccbluex/liquidbounce/event/events/TransferOrigin";
+import { Packet } from "@jvm/types/net/minecraft/network/packet/Packet";
 
 
 const script = registerScript.apply({
