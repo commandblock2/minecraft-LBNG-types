@@ -77,7 +77,7 @@ jobs:
       - name: Upload TypeScript Definitions
         uses: actions/upload-artifact@v4
         with:
-          name: '@jvm/types'
+          name: 'jvm-types'
           path: generated-modules/types-gen/jvm
           
       - name: Upload Compiled Scripts
