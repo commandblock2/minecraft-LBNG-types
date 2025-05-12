@@ -17,6 +17,8 @@ import { Throwable } from "@jvm/types/java/lang/Throwable";
 import { ClassPath } from "@jvm/types/com/google/common/reflect/ClassPath";
 import { ScriptManager } from "@jvm/types/net/ccbluex/liquidbounce/script/ScriptManager";
 import { Exception } from "@jvm/types/java/lang/Exception";
+import { FilesKt } from "@jvm/types/kotlin/io/FilesKt";
+import { File as JavaFile } from "@jvm/types/java/io/File";
 
 // type: array
 /** @type any[] */
@@ -228,18 +230,6 @@ ${globalEntries
 
 `;
 
-        const templateFile = `
-// header for template.ts
-// imports
-import {
-${globalEntries
-                .filter((entry) => entry[1] != undefined)
-                .filter((entry) => entry[1] instanceof Class || entry[1].class != undefined)
-                .map((entry) => `   ${entry[0]}`)
-                .join(",\n")}
-} from "@embedded";
-`;
-
         const importsForScriptEventPatch = `
 // imports for
 ${eventEntries.map((entry: any) => entry[1]).map((kClassImpl: any) => `import type { ${kClassImpl.simpleName} } from '../../../../../../${kClassImpl.qualifiedName.replaceAll(".", "/")}.d.ts'`).join("\n")}
@@ -258,7 +248,8 @@ ${eventEntries.map((entry: any) => `on(eventName: "${entry[0]}", handler: (${ent
 
         // Output the generated content to console for debugging
         console.log(embeddedDefinition);
-        console.log(templateFile);
+        // @ts-expect-error
+        FilesKt.writeText(new JavaFile(`${path}/types-gen/embedded.d.ts`), embeddedDefinition, Java.type("java.nio.charset.StandardCharsets").UTF_8)
         console.log(importsForScriptEventPatch);
         console.log(onEventsForScriptPatch);
     } catch (e) {
