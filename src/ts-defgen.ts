@@ -201,13 +201,13 @@ function work(path: string, packageName: string) {
 
         const embeddedDefinition = `
 // embedded.ts
-declare module "@embedded" {
 // imports
 ${javaClasses
                 .map((clazz) => {
                     return `import { ${getName(clazz)} } from "@${packageName}/types/${clazz.name.replaceAll(".", "/")}";`;
                 })
                 .join("\n")}
+declare module "@embedded" {
 
 
 // exports
@@ -228,6 +228,7 @@ ${globalEntries
 
 }
 
+export { };
 `;
 
         const importsForScriptEventPatch = `
