@@ -207,7 +207,7 @@ ${javaClasses
                     return `import { ${getName(clazz)} } from "@${packageName}/types/${clazz.name.replaceAll(".", "/")}";`;
                 })
                 .join("\n")}
-declare module "@embedded" {
+declare global {
 
 
 // exports
