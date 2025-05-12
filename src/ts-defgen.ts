@@ -249,7 +249,7 @@ ${eventEntries.map((entry: any) => `on(eventName: "${entry[0]}", handler: (${ent
         // Output the generated content to console for debugging
         console.log(embeddedDefinition);
         // @ts-expect-error
-        FilesKt.writeText(new JavaFile(`${path}/types-gen/embedded.d.ts`), embeddedDefinition, Java.type("java.nio.charset.StandardCharsets").UTF_8)
+        FilesKt.writeText(new JavaFile(`${path}/types-gen/${packageName}/other/embedded.d.ts`), embeddedDefinition, Java.type("java.nio.charset.StandardCharsets").UTF_8)
         console.log(importsForScriptEventPatch);
         console.log(onEventsForScriptPatch);
     } catch (e) {
