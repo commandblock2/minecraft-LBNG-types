@@ -135,7 +135,7 @@ script.registerModule({
             }
         }
 
-        if (!event.original || event.origin == TransferOrigin.RECEIVE)
+        if (!event.original || event.origin == TransferOrigin.INCOMING)
             return
 
         const stack = mc.player?.getStackInHand(mc.player?.activeHand);

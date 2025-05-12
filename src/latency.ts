@@ -329,7 +329,7 @@ script.registerModule({
             const method = mod.settings.measurementMethod.getValue();
 
             // Track outgoing packets
-            if (event.origin === TransferOrigin.SEND) {
+            if (event.origin === TransferOrigin.OUTGOING) {
                 // Block interaction method
                 if ((method === "BlockInteraction" || method === "All") &&
                     packet instanceof PlayerInteractBlockC2SPacket) {
@@ -341,7 +341,7 @@ script.registerModule({
             }
 
             // Match incoming packets
-            if (event.origin === TransferOrigin.RECEIVE) {
+            if (event.origin === TransferOrigin.INCOMING) {
                 // Block update method
                 if ((method === "BlockInteraction" || method === "All") &&
                     packet instanceof BlockUpdateS2CPacket) {

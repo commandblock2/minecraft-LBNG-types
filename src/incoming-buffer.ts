@@ -40,7 +40,7 @@ script.registerModule({
 
 
 
-            if (event.origin == TransferOrigin.RECEIVE) {
+            if (event.origin == TransferOrigin.INCOMING) {
                 event.cancelEvent()
 
                 packetList.push({
@@ -57,7 +57,7 @@ script.registerModule({
     mod.on("disable", () => {
         packetList.forEach(element => {
             const packetEvent = new PacketEvent(
-                TransferOrigin.RECEIVE,
+                TransferOrigin.INCOMING,
                 element.packet,
                 false
             );
@@ -82,7 +82,7 @@ script.registerModule({
         packetList.forEach(element => {
             if (element.tick <= 0) {
                 const packetEvent = new PacketEvent(
-                    TransferOrigin.RECEIVE,
+                    TransferOrigin.OUTGOING,
                     element.packet,
                     false
                 );
