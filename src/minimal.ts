@@ -1,3 +1,5 @@
+import { Matrix2d } from "@jvm/types/org/joml/Matrix2d";
+
 const script = registerScript.apply({
     name: "example-minimal",
     version: "1.0.0",
