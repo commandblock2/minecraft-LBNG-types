@@ -250,9 +250,15 @@ ${eventEntries.map((entry: any) => `on(eventName: "${entry[0]}", handler: (${ent
         // Output the generated content to console for debugging
         console.log(embeddedDefinition);
         // @ts-expect-error
-        Java.type('java.nio.file.Files').writeString(
-            // @ts-expect-error
-            Paths.get(`${path}/types-gen/${packageName}/other/embedded.d.ts`),
+        const Files = Java.type('java.nio.file.Files')
+        // @ts-expect-error
+        const filePath = Paths.get(`${path}/types-gen/${packageName}/other/embedded.d.ts`);
+
+        // @ts-expect-error
+        Files.createDirectories(filePath.getParent());
+
+        Files.writeString(
+            filePath,
             embeddedDefinition,
             // @ts-expect-error
             Java.type("java.nio.charset.StandardCharsets").UTF_8
