@@ -250,11 +250,9 @@ ${eventEntries.map((entry: any) => `on(eventName: "${entry[0]}", handler: (${ent
         // Output the generated content to console for debugging
         console.log(embeddedDefinition);
         // @ts-expect-error
-        const Paths = Java.type('java.nio.file.Paths');
-        // @ts-expect-error
         Java.type('java.nio.file.Files').writeString(
-            
-            new Paths(`${path}/types-gen/${packageName}/other/embedded.d.ts`),
+            // @ts-expect-error
+            Paths.get(`${path}/types-gen/${packageName}/other/embedded.d.ts`),
             embeddedDefinition,
             // @ts-expect-error
             Java.type("java.nio.charset.StandardCharsets").UTF_8
