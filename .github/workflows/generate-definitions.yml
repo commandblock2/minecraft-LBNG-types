@@ -32,7 +32,7 @@ jobs:
         run: |
           git clone https://github.com/commandblock2/LiquidBounce.git lbng
           cd lbng
-          git checkout 86a0a340201e8c7263847fac96835e9e8bf7c4aa  
+          git checkout 7bbffccd8e0b063c3cf67c311ff3f62a23ccad8a  
       
       - name: Download Latest ts-generator
         run: |

@@ -113,8 +113,7 @@ Now you can find a `types-gen` folder in your script folder, this contains the g
         ```
         in `LivingEntity` the method has a signature of `playSound(sound: SoundEvent): Unit;` and `playSound(sound: SoundEvent, volume: number, pitch: number): Unit;`. Therefore the ts type checker will emit a error, you can only do a `(mc.player as unknown as LivingEntity)` or live with the error (the compiler will still produce a valid js though).
 
-7. I have not yet tried to get it working with webpack or something to allow it use a part of the npm ecosystem (using npm libraries in LiquidBounce scripts).
-8. You will need a bit more prompt than writing kotlin directly when vibe coding.
+7. You will need a bit more prompt than writing kotlin directly when vibe coding.
 
 
 ## Contribution and TODOs
