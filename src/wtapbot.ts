@@ -1,5 +1,5 @@
-import { Entity } from "@jvm/types/net/minecraft/entity/Entity";
-import { LivingEntity } from "@jvm/types/net/minecraft/entity/LivingEntity";
+import { Entity } from "jvm-types/net/minecraft/entity/Entity";
+import { LivingEntity } from "jvm-types/net/minecraft/entity/LivingEntity";
 
 
 const script = registerScript.apply({

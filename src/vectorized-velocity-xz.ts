@@ -1,4 +1,4 @@
-import { EntityVelocityUpdateS2CPacket } from "@jvm/types/net/minecraft/network/packet/s2c/play/EntityVelocityUpdateS2CPacket";
+import { EntityVelocityUpdateS2CPacket } from "jvm-types/net/minecraft/network/packet/s2c/play/EntityVelocityUpdateS2CPacket";
 
 const script = registerScript.apply({
     name: "vectorized-velocity-xz",

@@ -65,6 +65,10 @@ jobs:
 
       - name: Apply Patches
         run: npm run apply-patches
+
+      - name: Add index.d.ts to package.json typesVersions
+        run: |
+          jq --in-place '. + {"types": "index.d.ts"} | .typesVersions."*"."*" += ["index.d.ts"]' ./generated-modules/types-gen/jvm/package.json
         
       - name: Install Generated Definitions
         run: npm install file:./generated-modules/types-gen/jvm/ --no-save

@@ -1,9 +1,9 @@
 // Import packet types for detection
-import { PlayerInteractBlockC2SPacket } from "@jvm/types/net/minecraft/network/packet/c2s/play/PlayerInteractBlockC2SPacket";
-import { BlockUpdateS2CPacket } from "@jvm/types/net/minecraft/network/packet/s2c/play/BlockUpdateS2CPacket";
-import { BlockPos as BlockPosType } from "@jvm/types/net/minecraft/util/math/BlockPos";
-import { TransferOrigin } from "@jvm/types/net/ccbluex/liquidbounce/event/events/TransferOrigin";
-import { PacketEvent } from "@jvm/types/net/ccbluex/liquidbounce/event/events/PacketEvent";
+import { PlayerInteractBlockC2SPacket } from "jvm-types/net/minecraft/network/packet/c2s/play/PlayerInteractBlockC2SPacket";
+import { BlockUpdateS2CPacket } from "jvm-types/net/minecraft/network/packet/s2c/play/BlockUpdateS2CPacket";
+import { BlockPos as BlockPosType } from "jvm-types/net/minecraft/util/math/BlockPos";
+import { TransferOrigin } from "jvm-types/net/ccbluex/liquidbounce/event/events/TransferOrigin";
+import { PacketEvent } from "jvm-types/net/ccbluex/liquidbounce/event/events/PacketEvent";
 
 /**
  * Interface for tracking latency measurements

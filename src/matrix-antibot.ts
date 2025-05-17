@@ -1,10 +1,10 @@
-import { GameProfile } from "@jvm/types/com/mojang/authlib/GameProfile";
-import { UUID } from "@jvm/types/java/util/UUID";
-import { PlayerListS2CPacket } from "@jvm/types/net/minecraft/network/packet/s2c/play/PlayerListS2CPacket";
-import { PlayerRemoveS2CPacket } from "@jvm/types/net/minecraft/network/packet/s2c/play/PlayerRemoveS2CPacket";
-import { ModuleAntiBot } from "@jvm/types/net/ccbluex/liquidbounce/features/module/modules/misc/antibot/ModuleAntiBot"
-import { PlayerEntity } from "@jvm/types/net/minecraft/entity/player/PlayerEntity";
-import { Throwable } from "@jvm/types/java/lang/Throwable";
+import { GameProfile } from "jvm-types/com/mojang/authlib/GameProfile";
+import { UUID } from "jvm-types/java/util/UUID";
+import { PlayerListS2CPacket } from "jvm-types/net/minecraft/network/packet/s2c/play/PlayerListS2CPacket";
+import { PlayerRemoveS2CPacket } from "jvm-types/net/minecraft/network/packet/s2c/play/PlayerRemoveS2CPacket";
+import { ModuleAntiBot } from "jvm-types/net/ccbluex/liquidbounce/features/module/modules/misc/antibot/ModuleAntiBot"
+import { PlayerEntity } from "jvm-types/net/minecraft/entity/player/PlayerEntity";
+import { Throwable } from "jvm-types/java/lang/Throwable";
 
 
 const script = registerScript.apply({

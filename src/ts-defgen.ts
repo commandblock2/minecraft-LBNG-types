@@ -252,7 +252,7 @@ ${eventEntries.map((entry: any) => `on(eventName: "${entry[0]}", handler: (${ent
         // @ts-expect-error
         const Files = Java.type('java.nio.file.Files')
         // @ts-expect-error
-        const filePath = Paths.get(`${path}/types-gen/${packageName}/other/embedded.d.ts`);
+        const filePath = Paths.get(`${path}/types-gen/${packageName}/index.d.ts`);
 
         // @ts-expect-error
         Files.createDirectories(filePath.getParent());

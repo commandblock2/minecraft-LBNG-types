@@ -1,5 +1,5 @@
-import { PlayerListS2CPacket } from "@jvm/types/net/minecraft/network/packet/s2c/play/PlayerListS2CPacket";
-import { PlayerListS2CPacket$Action } from "@jvm/types/net/minecraft/network/packet/s2c/play/PlayerListS2CPacket$Action";
+import { PlayerListS2CPacket } from "jvm-types/net/minecraft/network/packet/s2c/play/PlayerListS2CPacket";
+import { PlayerListS2CPacket$Action } from "jvm-types/net/minecraft/network/packet/s2c/play/PlayerListS2CPacket$Action";
 
 const script = registerScript.apply({
     name: "packet-visualizer",

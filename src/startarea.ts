@@ -1,6 +1,6 @@
-import { Throwable } from "@jvm/types/java/lang/Throwable";
-import { TagEntityEvent } from "@jvm/types/net/ccbluex/liquidbounce/event/events/TagEntityEvent";
-import { OtherClientPlayerEntity } from "@jvm/types/net/minecraft/client/network/OtherClientPlayerEntity";
+import { Throwable } from "jvm-types/java/lang/Throwable";
+import { TagEntityEvent } from "jvm-types/net/ccbluex/liquidbounce/event/events/TagEntityEvent";
+import { OtherClientPlayerEntity } from "jvm-types/net/minecraft/client/network/OtherClientPlayerEntity";
 
 
 const script = registerScript.apply({

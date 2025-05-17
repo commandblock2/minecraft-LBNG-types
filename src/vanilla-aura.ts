@@ -1,15 +1,15 @@
-import { TransferOrigin } from "@jvm/types/net/ccbluex/liquidbounce/event/events/TransferOrigin";
-import { ClientPlayerInteractionManager } from "@jvm/types/net/minecraft/client/network/ClientPlayerInteractionManager";
-import { Entity } from "@jvm/types/net/minecraft/entity/Entity";
-import { EntityType } from "@jvm/types/net/minecraft/entity/EntityType";
-import { LivingEntity } from "@jvm/types/net/minecraft/entity/LivingEntity";
-import { PlayerEntity } from "@jvm/types/net/minecraft/entity/player/PlayerEntity";
-import { UseAction } from "@jvm/types/net/minecraft/item/consume/UseAction";
-import { PlayerActionC2SPacket } from "@jvm/types/net/minecraft/network/packet/c2s/play/PlayerActionC2SPacket";
-import { PlayerActionC2SPacket$Action } from "@jvm/types/net/minecraft/network/packet/c2s/play/PlayerActionC2SPacket$Action";
-import { PlayerInteractEntityC2SPacket } from "@jvm/types/net/minecraft/network/packet/c2s/play/PlayerInteractEntityC2SPacket";
-import { EntitySpawnS2CPacket } from "@jvm/types/net/minecraft/network/packet/s2c/play/EntitySpawnS2CPacket";
-import { PlayerListS2CPacket } from "@jvm/types/net/minecraft/network/packet/s2c/play/PlayerListS2CPacket";
+import { TransferOrigin } from "jvm-types/net/ccbluex/liquidbounce/event/events/TransferOrigin";
+import { ClientPlayerInteractionManager } from "jvm-types/net/minecraft/client/network/ClientPlayerInteractionManager";
+import { Entity } from "jvm-types/net/minecraft/entity/Entity";
+import { EntityType } from "jvm-types/net/minecraft/entity/EntityType";
+import { LivingEntity } from "jvm-types/net/minecraft/entity/LivingEntity";
+import { PlayerEntity } from "jvm-types/net/minecraft/entity/player/PlayerEntity";
+import { UseAction } from "jvm-types/net/minecraft/item/consume/UseAction";
+import { PlayerActionC2SPacket } from "jvm-types/net/minecraft/network/packet/c2s/play/PlayerActionC2SPacket";
+import { PlayerActionC2SPacket$Action } from "jvm-types/net/minecraft/network/packet/c2s/play/PlayerActionC2SPacket$Action";
+import { PlayerInteractEntityC2SPacket } from "jvm-types/net/minecraft/network/packet/c2s/play/PlayerInteractEntityC2SPacket";
+import { EntitySpawnS2CPacket } from "jvm-types/net/minecraft/network/packet/s2c/play/EntitySpawnS2CPacket";
+import { PlayerListS2CPacket } from "jvm-types/net/minecraft/network/packet/s2c/play/PlayerListS2CPacket";
 
 const script = registerScript.apply({
     name: "vanilla-aura",
