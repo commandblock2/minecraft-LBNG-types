@@ -204,7 +204,7 @@ function work(path: string, packageName: string) {
 // imports
 ${javaClasses
                 .map((clazz) => {
-                    return `import { ${getName(clazz)} } from "@${packageName}/types/${clazz.name.replaceAll(".", "/")}";`;
+                    return `import { ${getName(clazz)} } from "./types/${clazz.name.replaceAll(".", "/")}";`;
                 })
                 .join("\n")}
 declare global {
