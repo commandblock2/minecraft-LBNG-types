@@ -68,11 +68,11 @@ jobs:
 
       - name: Add index.d.ts to package.json typesVersions
         run: |
-          jq '. + {"types": "index.d.ts"} | .typesVersions."*"."*" += ["index.d.ts"]' ./generated-modules/types-gen/jvm/package.json > ./generated-modules/types-gen/jvm/package.json.tmp
-          mv ./generated-modules/types-gen/jvm/package.json.tmp ./generated-modules/types-gen/jvm/package.json
+          jq '. + {"types": "index.d.ts"} | .typesVersions."*"."*" += ["index.d.ts"]' ./generated-modules/types-gen/jvm-types/package.json > ./generated-modules/types-gen/jvm-types/package.json.tmp
+          mv ./generated-modules/types-gen/jvm-types/package.json.tmp ./generated-modules/types-gen/jvm-types/package.json
         
       - name: Install Generated Definitions
-        run: npm install file:./generated-modules/types-gen/jvm/ --no-save
+        run: npm install file:./generated-modules/types-gen/jvm-types/ --no-save
         
       - name: Compile TypeScript
         run: |
@@ -83,7 +83,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: 'jvm-types'
-          path: generated-modules/types-gen/jvm
+          path: generated-modules/types-gen/jvm-types
           
       - name: Upload Compiled Scripts
         uses: actions/upload-artifact@v4
