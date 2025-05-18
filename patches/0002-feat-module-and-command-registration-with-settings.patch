@@ -10,13 +10,13 @@ Subject: [PATCH] feat: module and command registration with settings fixed
  .../bindings/features/ScriptSetting.d.ts      | 80 ++++++++++++++++---
  4 files changed, 134 insertions(+), 25 deletions(-)
 
-diff --git a/jvm/types/net/ccbluex/liquidbounce/config/types/Value.d.ts b/jvm/types/net/ccbluex/liquidbounce/config/types/Value.d.ts
+diff --git a/jvm-types/types/net/ccbluex/liquidbounce/config/types/Value.d.ts b/jvm-types/types/net/ccbluex/liquidbounce/config/types/Value.d.ts
 index 20d082de..a6023037 100644
---- a/jvm/types/net/ccbluex/liquidbounce/config/types/Value.d.ts
-+++ b/jvm/types/net/ccbluex/liquidbounce/config/types/Value.d.ts
+--- a/jvm-types/types/net/ccbluex/liquidbounce/config/types/Value.d.ts
++++ b/jvm-types/types/net/ccbluex/liquidbounce/config/types/Value.d.ts
 @@ -8,8 +8,13 @@ import type { Gson } from '../../../../../com/google/gson/Gson.d.ts'
  import type { JsonElement } from '../../../../../com/google/gson/JsonElement.d.ts'
- import type { Function0 } from '../../../../../kotlin/jvm/functions/Function0.d.ts'
+ import type { Function0 } from '../../../../../kotlin/jvm-types/functions/Function0.d.ts'
  import type { KProperty } from '../../../../../kotlin/reflect/KProperty.d.ts'
 -import type { Value } from '../../../../../org/graalvm/polyglot/Value.d.ts'
 +
@@ -57,10 +57,10 @@ index 20d082de..a6023037 100644
 +            (T extends NamedChoice ? string : never)): Unit;
  }
 \ No newline at end of file
-diff --git a/jvm/types/net/ccbluex/liquidbounce/script/PolyglotScript$RegisterScript.d.ts b/jvm/types/net/ccbluex/liquidbounce/script/PolyglotScript$RegisterScript.d.ts
+diff --git a/jvm-types/types/net/ccbluex/liquidbounce/script/PolyglotScript$RegisterScript.d.ts b/jvm-types/types/net/ccbluex/liquidbounce/script/PolyglotScript$RegisterScript.d.ts
 index 8625b71b..00102745 100644
---- a/jvm/types/net/ccbluex/liquidbounce/script/PolyglotScript$RegisterScript.d.ts
-+++ b/jvm/types/net/ccbluex/liquidbounce/script/PolyglotScript$RegisterScript.d.ts
+--- a/jvm-types/types/net/ccbluex/liquidbounce/script/PolyglotScript$RegisterScript.d.ts
++++ b/jvm-types/types/net/ccbluex/liquidbounce/script/PolyglotScript$RegisterScript.d.ts
 @@ -1,10 +1,19 @@
  import type { Object } from '../../../../java/lang/Object.d.ts'
  import type { Function } from '../../../../java/util/function/Function.d.ts'
@@ -85,14 +85,14 @@ index 8625b71b..00102745 100644
      andThen(arg0: (param0: R) => V): (param0: T) => V;
  }
 \ No newline at end of file
-diff --git a/jvm/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts b/jvm/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts
+diff --git a/jvm-types/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts b/jvm-types/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts
 index 9c577c1d..7373b777 100644
---- a/jvm/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts
-+++ b/jvm/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts
+--- a/jvm-types/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts
++++ b/jvm-types/types/net/ccbluex/liquidbounce/script/PolyglotScript.d.ts
 @@ -9,7 +9,38 @@ import type { Command } from '../../../../net/ccbluex/liquidbounce/features/comm
  import type { ClientModule } from '../../../../net/ccbluex/liquidbounce/features/module/ClientModule.d.ts'
  import type { ChoiceConfigurable } from '../../../../net/ccbluex/liquidbounce/config/types/ChoiceConfigurable.d.ts'
- import type { Function1 } from '../../../../kotlin/jvm/functions/Function1.d.ts'
+ import type { Function1 } from '../../../../kotlin/jvm-types/functions/Function1.d.ts'
 -import type { Value } from '../../../../org/graalvm/polyglot/Value.d.ts'
 +
 +import type { ScriptModule } from './bindings/features/ScriptModule.d.ts'
@@ -144,10 +144,10 @@ index 9c577c1d..7373b777 100644
 +                callback: (module: ScriptModule & { settings: SettingsToValues<TSettings> }) => void
 +    ): Unit;
 +}
-diff --git a/jvm/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting.d.ts b/jvm/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting.d.ts
+diff --git a/jvm-types/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting.d.ts b/jvm-types/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting.d.ts
 index 8437232f..3a0dd556 100644
---- a/jvm/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting.d.ts
-+++ b/jvm/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting.d.ts
+--- a/jvm-types/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting.d.ts
++++ b/jvm-types/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptSetting.d.ts
 @@ -1,5 +1,4 @@
  import type { Object } from '../../../../../../java/lang/Object.d.ts'
 -import type { Value } from '../../../../../../org/graalvm/polyglot/Value.d.ts'

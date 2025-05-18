@@ -288,6 +288,7 @@ script.registerCommand({
     parameters: [
     ],
     onExecute() {
+        // @ts-expect-error
         UnsafeThread.run(() => work(path, packageName));
     }
 });
