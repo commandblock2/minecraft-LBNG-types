@@ -16,7 +16,7 @@ index 20d082de..a6023037 100644
 +++ b/jvm-types/types/net/ccbluex/liquidbounce/config/types/Value.d.ts
 @@ -8,8 +8,13 @@ import type { Gson } from '../../../../../com/google/gson/Gson.d.ts'
  import type { JsonElement } from '../../../../../com/google/gson/JsonElement.d.ts'
- import type { Function0 } from '../../../../../kotlin/jvm-types/functions/Function0.d.ts'
+ import type { Function0 } from '../../../../../kotlin/jvm/functions/Function0.d.ts'
  import type { KProperty } from '../../../../../kotlin/reflect/KProperty.d.ts'
 -import type { Value } from '../../../../../org/graalvm/polyglot/Value.d.ts'
 +
@@ -92,7 +92,7 @@ index 9c577c1d..7373b777 100644
 @@ -9,7 +9,38 @@ import type { Command } from '../../../../net/ccbluex/liquidbounce/features/comm
  import type { ClientModule } from '../../../../net/ccbluex/liquidbounce/features/module/ClientModule.d.ts'
  import type { ChoiceConfigurable } from '../../../../net/ccbluex/liquidbounce/config/types/ChoiceConfigurable.d.ts'
- import type { Function1 } from '../../../../kotlin/jvm-types/functions/Function1.d.ts'
+ import type { Function1 } from '../../../../kotlin/jvm/functions/Function1.d.ts'
 -import type { Value } from '../../../../org/graalvm/polyglot/Value.d.ts'
 +
 +import type { ScriptModule } from './bindings/features/ScriptModule.d.ts'
