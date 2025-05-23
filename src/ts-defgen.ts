@@ -263,6 +263,38 @@ ${eventEntries.map((entry: any) => `on(eventName: "${entry[0]}", handler: (${ent
             // @ts-expect-error
             Java.type("java.nio.charset.StandardCharsets").UTF_8
         )
+
+        // Write the ScriptModule augmentation file
+        const augmentationContent = `// ScriptModule augmentation - adds event handler interfaces
+
+// Event type imports
+${importsForScriptEventPatch}
+import type { Unit } from '../types/kotlin/Unit';
+
+// Augment ScriptModule with specific event handler overloads
+declare module '../types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule' {
+    interface ScriptModule {
+        on(eventName: "enable" | "disable", handler: () => void): Unit;
+
+        // on events with specific event types
+        ${onEventsForScriptPatch}
+    }
+}
+`;
+
+        // @ts-expect-error
+        const augmentationFilePath = Paths.get(`${path}/types-gen/augmentations/ScriptModule.augmentation.d.ts`);
+        
+        // @ts-expect-error
+        Files.createDirectories(augmentationFilePath.getParent());
+        
+        Files.writeString(
+            augmentationFilePath,
+            augmentationContent,
+            // @ts-expect-error
+            Java.type("java.nio.charset.StandardCharsets").UTF_8
+        );
+
         console.log(importsForScriptEventPatch);
         console.log(onEventsForScriptPatch);
     } catch (e) {

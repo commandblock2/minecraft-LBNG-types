@@ -63,14 +63,15 @@ jobs:
           mkdir -p generated-modules
           cp -r lbng/run/LiquidBounce/scripts/types-gen generated-modules/
 
-      - name: Apply Patches
-        run: npm run apply-patches
-
-      - name: Add index.d.ts to package.json typesVersions
+      - name: Copy Augmentations
         run: |
-          jq '. + {"types": "index.d.ts"} | .typesVersions."*"."*" += ["index.d.ts"]' ./generated-modules/types-gen/jvm-types/package.json > ./generated-modules/types-gen/jvm-types/package.json.tmp
+          cp -r augmentation ./generated-modules/types-gen/jvm-types/augmentations
+
+      - name: Add index.d.ts and augmentations to package.json
+        run: |
+          jq '. + {"types": "index.d.ts"} | .files += ["augmentations/**/*.d.ts"] | .typesVersions."*"."*" += ["./augmentations/*", "index.d.ts"]' ./generated-modules/types-gen/jvm-types/package.json > ./generated-modules/types-gen/jvm-types/package.json.tmp
           mv ./generated-modules/types-gen/jvm-types/package.json.tmp ./generated-modules/types-gen/jvm-types/package.json
-        
+
       - name: Install Generated Definitions
         run: npm install file:./generated-modules/types-gen/jvm-types/ --no-save
         
