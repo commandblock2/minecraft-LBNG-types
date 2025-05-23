@@ -65,7 +65,7 @@ jobs:
 
       - name: Copy Augmentations
         run: |
-          cp -r augmentation ./generated-modules/types-gen/jvm-types/augmentations
+          cp -r augmentations ./generated-modules/types-gen/jvm-types/augmentations
 
       - name: Add index.d.ts and augmentations to package.json
         run: |
