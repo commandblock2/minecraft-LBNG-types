@@ -283,7 +283,7 @@ declare module '../types/net/ccbluex/liquidbounce/script/bindings/features/Scrip
 `;
 
         // @ts-expect-error
-        const augmentationFilePath = Paths.get(`${path}/types-gen/augmentations/ScriptModule.augmentation.d.ts`);
+        const augmentationFilePath = Paths.get(`${path}/types-gen/${packageName}/augmentations/ScriptModule.augmentation.d.ts`);
         
         // @ts-expect-error
         Files.createDirectories(augmentationFilePath.getParent());
