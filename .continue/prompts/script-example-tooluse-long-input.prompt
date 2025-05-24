@@ -50,3 +50,5 @@ Conversion of type 'LivingEntity' to type 'Entity' may be a mistake because neit
     Type '(pose: EntityPose) => Box' is not comparable to type '() => Box'.
       Target signature provides too few arguments. Expected 1 or more, but got 0.
 ```
+
+{{{ input }}}

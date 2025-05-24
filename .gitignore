@@ -2,3 +2,4 @@ node_modules/
 generated-modules/
 dist/
 dist
+augmentations/ScriptModule.augmentation.d.ts
