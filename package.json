@@ -5,10 +5,12 @@
   "author": "commandblock2",
   "license": "GPL-3.0",
   "bin": {
-    "lb-hotreload-watch": "./bin/lb-hotreload-watch"
+    "lb-hotreload-watch": "./scripts/dist/watch.js"
   },
   "scripts": {
-    "lb-hotreload-watch": "npx ts-node ./scripts/watch.ts"
+    "lb-hotreload-watch": "npx ts-node ./scripts/watch.ts",
+    "build-watch": "tsc --target es2018 --module commonjs --esModuleInterop true scripts/watch.ts --outDir scripts/dist && chmod +x scripts/dist/watch.js",
+    "prepublishOnly": "npm run build-watch"
   },
   "dependencies": {
     "chokidar": "^4.0.3",
