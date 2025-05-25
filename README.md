@@ -89,8 +89,8 @@ Adjust the order flexibly to your needs.
     - `.js` files will be produced in the dist folder
 
 4. (Optional) Use hot reloader
-    - add this repo as a dev dependency: `npm install git+https://github.com/commandblock2/minecraft-lbng-types.git --save-dev` (note: if you used `--no-save` for `jvm-types` this would probably wipe your previous `jvm-types` installation and you will need to re-install it)
-    - run `npm run lb-hotreload-watch`
+    - add this repo as a dev dependency: `npm install minecraft-lbng-types --save-dev` (note: if you used `--no-save` for `jvm-types` this would probably wipe your previous `jvm-types` installation and you will need to re-install it)
+    - run `npx lb-hotreload-watch`
     - copy the [LBNG-script/hot-reloader.js](LBNG-script/hot-reloader.js) into your script directory
     - enable the module script hot reloader in LiquidBounce after a `.script reload`
     - start modifying your existing script (does not work with newly created scripts yet)
