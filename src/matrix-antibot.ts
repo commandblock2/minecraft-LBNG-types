@@ -1,34 +1,10 @@
-import {
-    Setting,
-    Vec3i,
-    Vec3d,
-    MathHelper,
-    BlockPos,
-    Hand,
-    RotationAxis,
-    mc,
-    Client,
-    RotationUtil,
-    ItemUtil,
-    NetworkUtil,
-    InteractionUtil,
-    BlockUtil,
-    MovementUtil,
-    ReflectionUtil,
-    ParameterValidator,
-    UnsafeThread,
-    localStorage,
-    registerScript
-} from "@embedded";
-import { GameProfile } from "@minecraft-yarn-definitions/types/com/mojang/authlib/GameProfile";
-import { UUID } from "@minecraft-yarn-definitions/types/java/util/UUID";
-import { PlayerListS2CPacket } from "@minecraft-yarn-definitions/types/net/minecraft/network/packet/s2c/play/PlayerListS2CPacket";
-import { PlayerRemoveS2CPacket } from "@minecraft-yarn-definitions/types/net/minecraft/network/packet/s2c/play/PlayerRemoveS2CPacket";
-import { ModuleAntiBot } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/features/module/modules/misc/antibot/ModuleAntiBot"
-import { PlayerEntity } from "@minecraft-yarn-definitions/types/net/minecraft/entity/player/PlayerEntity";
-import { Throwable } from "@minecraft-yarn-definitions/types/java/lang/Throwable";
-/* eslint-enable unused-imports/no-unused-imports */
-// DO NOT TOUCH ANYTHING ABOVE THIS LINE, also not sure why it didn't work
+import { GameProfile } from "jvm-types/com/mojang/authlib/GameProfile";
+import { UUID } from "jvm-types/java/util/UUID";
+import { PlayerListS2CPacket } from "jvm-types/net/minecraft/network/packet/s2c/play/PlayerListS2CPacket";
+import { PlayerRemoveS2CPacket } from "jvm-types/net/minecraft/network/packet/s2c/play/PlayerRemoveS2CPacket";
+import { ModuleAntiBot } from "jvm-types/net/ccbluex/liquidbounce/features/module/modules/misc/antibot/ModuleAntiBot"
+import { PlayerEntity } from "jvm-types/net/minecraft/entity/player/PlayerEntity";
+import { Throwable } from "jvm-types/java/lang/Throwable";
 
 
 const script = registerScript.apply({

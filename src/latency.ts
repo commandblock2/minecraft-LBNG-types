@@ -1,34 +1,9 @@
-import {
-    Setting,
-    Vec3i,
-    Vec3d,
-    MathHelper,
-    BlockPos,
-    Hand,
-    RotationAxis,
-    mc,
-    Client,
-    RotationUtil,
-    ItemUtil,
-    NetworkUtil,
-    InteractionUtil,
-    BlockUtil,
-    MovementUtil,
-    ReflectionUtil,
-    ParameterValidator,
-    UnsafeThread,
-    localStorage,
-    registerScript
-} from "@embedded";
-/* eslint-enable unused-imports/no-unused-imports */
-// DO NOT TOUCH ANYTHING ABOVE THIS LINE, also not sure why it didn't work
-
 // Import packet types for detection
-import { PlayerInteractBlockC2SPacket } from "@minecraft-yarn-definitions/types/net/minecraft/network/packet/c2s/play/PlayerInteractBlockC2SPacket";
-import { BlockUpdateS2CPacket } from "@minecraft-yarn-definitions/types/net/minecraft/network/packet/s2c/play/BlockUpdateS2CPacket";
-import { BlockPos as BlockPosType } from "@minecraft-yarn-definitions/types/net/minecraft/util/math/BlockPos";
-import { TransferOrigin } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/event/events/TransferOrigin";
-import { PacketEvent } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/event/events/PacketEvent";
+import { PlayerInteractBlockC2SPacket } from "jvm-types/net/minecraft/network/packet/c2s/play/PlayerInteractBlockC2SPacket";
+import { BlockUpdateS2CPacket } from "jvm-types/net/minecraft/network/packet/s2c/play/BlockUpdateS2CPacket";
+import { BlockPos as BlockPosType } from "jvm-types/net/minecraft/util/math/BlockPos";
+import { TransferOrigin } from "jvm-types/net/ccbluex/liquidbounce/event/events/TransferOrigin";
+import { PacketEvent } from "jvm-types/net/ccbluex/liquidbounce/event/events/PacketEvent";
 
 /**
  * Interface for tracking latency measurements
@@ -354,7 +329,7 @@ script.registerModule({
             const method = mod.settings.measurementMethod.getValue();
 
             // Track outgoing packets
-            if (event.origin === TransferOrigin.SEND) {
+            if (event.origin === TransferOrigin.OUTGOING) {
                 // Block interaction method
                 if ((method === "BlockInteraction" || method === "All") &&
                     packet instanceof PlayerInteractBlockC2SPacket) {
@@ -366,7 +341,7 @@ script.registerModule({
             }
 
             // Match incoming packets
-            if (event.origin === TransferOrigin.RECEIVE) {
+            if (event.origin === TransferOrigin.INCOMING) {
                 // Block update method
                 if ((method === "BlockInteraction" || method === "All") &&
                     packet instanceof BlockUpdateS2CPacket) {

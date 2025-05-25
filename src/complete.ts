@@ -1,30 +1,4 @@
-import {
-    Setting,
-    Vec3i,
-    Vec3d,
-    MathHelper,
-    BlockPos,
-    Hand,
-    RotationAxis,
-    mc,
-    Client,
-    RotationUtil,
-    ItemUtil,
-    NetworkUtil,
-    InteractionUtil,
-    BlockUtil,
-    MovementUtil,
-    ReflectionUtil,
-    ParameterValidator,
-    UnsafeThread,
-    localStorage,
-    registerScript
-} from "@embedded";
-/* eslint-enable unused-imports/no-unused-imports */
-// DO NOT TOUCH ANYTHING ABOVE THIS LINE, also not sure why it didn't work
-
-import { Matrix2d } from "@minecraft-yarn-definitions/types/org/joml/Matrix2d";
-
+import { Matrix2d } from "jvm-types/org/joml/Matrix2d";
 
 const script = registerScript.apply({
     name: "example-complete",

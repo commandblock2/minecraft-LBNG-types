@@ -1,50 +1,24 @@
-// imports
-/* eslint-disable unused-imports/no-unused-imports */
-import {
-    Setting,
-    Vec3i,
-    Vec3d,
-    MathHelper,
-    BlockPos,
-    Hand,
-    RotationAxis,
-    mc,
-    Client,
-    RotationUtil,
-    ItemUtil,
-    NetworkUtil,
-    InteractionUtil,
-    BlockUtil,
-    MovementUtil,
-    ReflectionUtil,
-    ParameterValidator,
-    UnsafeThread,
-    localStorage,
-    registerScript
-} from "@embedded";
-/* eslint-enable unused-imports/no-unused-imports */
-// DO NOT TOUCH ANYTHING ABOVE THIS LINE, also not sure why it didn't work
-
-import { URLClassLoader } from "@minecraft-yarn-definitions/types/java/net/URLClassLoader";
-import { File } from "@minecraft-yarn-definitions/types/java/io/File";
-import { URL } from "@minecraft-yarn-definitions/types/java/net/URL";
-import { Thread } from "@minecraft-yarn-definitions/types/java/lang/Thread";
-import { Paths } from "@minecraft-yarn-definitions/types/java/nio/file/Paths";
+import { URLClassLoader } from "jvm-types/java/net/URLClassLoader";
+import { File } from "jvm-types/java/io/File";
+import { URL } from "jvm-types/java/net/URL";
+import { Thread } from "jvm-types/java/lang/Thread";
+import { Paths } from "jvm-types/java/nio/file/Paths";
 // @ts-expect-error
-import { HashMap } from "@minecraft-yarn-definitions/types/java/util/HashMap";
+import { HashMap } from "jvm-types/java/util/HashMap";
 // @ts-expect-error
-import { ArrayList } from "@minecraft-yarn-definitions/types/java/util/ArrayList";
-import { JvmClassMappingKt } from "@minecraft-yarn-definitions/types/kotlin/jvm/JvmClassMappingKt";
-import { Class } from "@minecraft-yarn-definitions/types/java/lang/Class";
-import { ScriptModule } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule";
-import { Object as JavaObject } from "@minecraft-yarn-definitions/types/java/lang/Object";
+import { ArrayList } from "jvm-types/java/util/ArrayList";
+import { JvmClassMappingKt } from "jvm-types/kotlin/jvm/JvmClassMappingKt";
+import { Class } from "jvm-types/java/lang/Class";
+import { ScriptModule } from "jvm-types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule";
+import { Object as JavaObject } from "jvm-types/java/lang/Object";
 // @ts-expect-error
-import { Map as JavaMap } from "@minecraft-yarn-definitions/types/java/util/Map";
-import { Throwable } from "@minecraft-yarn-definitions/types/java/lang/Throwable";
-import { ClassPath } from "@minecraft-yarn-definitions/types/com/google/common/reflect/ClassPath";
-import { ScriptManager } from "@minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/ScriptManager";
-import { Exception } from "@minecraft-yarn-definitions/types/java/lang/Exception";
-
+import { Map as JavaMap } from "jvm-types/java/util/Map";
+import { Throwable } from "jvm-types/java/lang/Throwable";
+import { ClassPath } from "jvm-types/com/google/common/reflect/ClassPath";
+import { ScriptManager } from "jvm-types/net/ccbluex/liquidbounce/script/ScriptManager";
+import { Exception } from "jvm-types/java/lang/Exception";
+import { FilesKt } from "jvm-types/kotlin/io/FilesKt";
+import { File as JavaFile } from "jvm-types/java/io/File";
 
 // type: array
 /** @type any[] */
@@ -227,13 +201,13 @@ function work(path: string, packageName: string) {
 
         const embeddedDefinition = `
 // embedded.ts
-declare module "@embedded" {
 // imports
 ${javaClasses
                 .map((clazz) => {
-                    return `import { ${getName(clazz)} } from "@${packageName}/types/${clazz.name.replaceAll(".", "/")}";`;
+                    return `import { ${getName(clazz)} } from "./types/${clazz.name.replaceAll(".", "/")}";`;
                 })
                 .join("\n")}
+declare global {
 
 
 // exports
@@ -254,23 +228,12 @@ ${globalEntries
 
 }
 
-`;
-
-        const templateFile = `
-// header for template.ts
-// imports
-import {
-${globalEntries
-                .filter((entry) => entry[1] != undefined)
-                .filter((entry) => entry[1] instanceof Class || entry[1].class != undefined)
-                .map((entry) => `   ${entry[0]}`)
-                .join(",\n")}
-} from "@embedded";
+export { };
 `;
 
         const importsForScriptEventPatch = `
 // imports for
-${eventEntries.map((entry: any) => entry[1]).map((kClassImpl: any) => `import type { ${kClassImpl.simpleName} } from '../../../../../../${kClassImpl.qualifiedName.replaceAll(".", "/")}.d.ts'`).join("\n")}
+${eventEntries.map((entry: any) => entry[1]).map((kClassImpl: any) => `import type { ${kClassImpl.simpleName} } from '../types/${kClassImpl.qualifiedName.replaceAll(".", "/")}.d.ts'`).join("\n")}
 
 
 `;
@@ -286,7 +249,52 @@ ${eventEntries.map((entry: any) => `on(eventName: "${entry[0]}", handler: (${ent
 
         // Output the generated content to console for debugging
         console.log(embeddedDefinition);
-        console.log(templateFile);
+        // @ts-expect-error
+        const Files = Java.type('java.nio.file.Files')
+        // @ts-expect-error
+        const filePath = Paths.get(`${path}/types-gen/${packageName}/index.d.ts`);
+
+        // @ts-expect-error
+        Files.createDirectories(filePath.getParent());
+
+        Files.writeString(
+            filePath,
+            embeddedDefinition,
+            // @ts-expect-error
+            Java.type("java.nio.charset.StandardCharsets").UTF_8
+        )
+
+        // Write the ScriptModule augmentation file
+        const augmentationContent = `// ScriptModule augmentation - adds event handler interfaces
+
+// Event type imports
+${importsForScriptEventPatch}
+import type { Unit } from '../types/kotlin/Unit';
+
+// Augment ScriptModule with specific event handler overloads
+declare module '../types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule' {
+    interface ScriptModule {
+        on(eventName: "enable" | "disable", handler: () => void): Unit;
+
+        // on events with specific event types
+        ${onEventsForScriptPatch}
+    }
+}
+`;
+
+        // @ts-expect-error
+        const augmentationFilePath = Paths.get(`${path}/types-gen/${packageName}/augmentations/ScriptModule.augmentation.d.ts`);
+        
+        // @ts-expect-error
+        Files.createDirectories(augmentationFilePath.getParent());
+        
+        Files.writeString(
+            augmentationFilePath,
+            augmentationContent,
+            // @ts-expect-error
+            Java.type("java.nio.charset.StandardCharsets").UTF_8
+        );
+
         console.log(importsForScriptEventPatch);
         console.log(onEventsForScriptPatch);
     } catch (e) {
@@ -297,7 +305,7 @@ ${eventEntries.map((entry: any) => `on(eventName: "${entry[0]}", handler: (${ent
     }
 }
 
-const packageName = "minecraft-yarn-definitions"
+const packageName = "jvm-types"
 const path = ScriptManager.INSTANCE.root.path;
 
 // @ts-expect-error
@@ -312,9 +320,6 @@ script.registerCommand({
     parameters: [
     ],
     onExecute() {
-
-        
-        
         // @ts-expect-error
         UnsafeThread.run(() => work(path, packageName));
     }
