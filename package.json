@@ -1,6 +1,6 @@
 {
   "name": "minecraft-lbng-types",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "utilities for writing typescripts for LiquidBounce nextgen",
   "author": "commandblock2",
   "license": "GPL-3.0",
