@@ -1,3 +1,9 @@
 #!/usr/bin/env node
-require('ts-node').register();
+require('ts-node').register({
+  transpileOnly: true,
+  esm: true,
+  compilerOptions: {
+    module: "ESNext"
+  }
+});
 require('../scripts/watch.ts');
