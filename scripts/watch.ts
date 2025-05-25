@@ -1,5 +1,5 @@
-import * as path from 'path';
-import * as chokidar from 'chokidar';
+const path = require('path');
+const chokidar = require('chokidar');
 
 /**
  * A simple file watcher that sends hot reload requests when files change
@@ -138,11 +138,11 @@ async function watchDirectoryForHotReload(dirPath: string, options: {
 
     // Watch for changes
     watcher
-        .on('change', (filePath) => {
+        .on('change', (filePath: string) => {
             console.log(`File changed: ${filePath}`);
             handleChange(filePath);
         })
-        .on('add', (filePath) => {
+        .on('add', (filePath: string) => {
             console.log(`File added: ${filePath}`);
             handleChange(filePath);
         });
