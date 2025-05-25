@@ -26,7 +26,7 @@ This repo contains
 - some prompt files to use on LLMs, specifically for claude + continue.dev vscode extension, at [.continue/prompts](.continue/prompts).
 
 Note:
-- As of now, the generated definition serves better purpose for auto completion, instead of type checking. 
+- As of now, the generated definition serves better purpose for auto completion, instead of type checking. (And it makes total sense to have a lot of errors when running tsc, they are mostly fine as long as they are not in your code)
 - the mods are only limited to those presented at the development environment of LiquidBounce NextGen.
 
 **When writing your script in typescript, expect inconsistencies with script API in js, but please report them to this repo if you can**
@@ -89,7 +89,7 @@ Adjust the order flexibly to your needs.
     - `.js` files will be produced in the dist folder
 
 4. (Optional) Use hot reloader
-    - add this repo as a dev dependency: `npm install git+https://github.com/commandblock2/minecraft-lbng-types.git --save-dev`
+    - add this repo as a dev dependency: `npm install git+https://github.com/commandblock2/minecraft-lbng-types.git --save-dev` (note: if you used `--no-save` for `jvm-types` this would probably wipe your previous `jvm-types` installation and you will need to re-install it)
     - run `npm run lb-hotreload-watch`
     - copy the [LBNG-script/hot-reloader.js](LBNG-script/hot-reloader.js) into your script directory
     - enable the module script hot reloader in LiquidBounce after a `.script reload`
