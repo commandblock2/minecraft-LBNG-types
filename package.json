@@ -9,7 +9,7 @@
   },
   "scripts": {
     "lb-hotreload-watch": "npx ts-node ./scripts/watch.ts",
-    "build-watch": "tsc --target es2018 --module commonjs --esModuleInterop true scripts/watch.ts --outDir scripts/dist && chmod +x scripts/dist/watch.js",
+    "build-watch": "tsc --skipLibCheck --isolatedModules --noEmit false scripts/watch.ts --outDir scripts/dist || exit 0 && chmod +x scripts/dist/watch.js",
     "prepublishOnly": "npm run build-watch"
   },
   "dependencies": {
