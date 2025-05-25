@@ -44,25 +44,38 @@ Adjust the order flexibly to your needs.
     - run `tsc --init`, it will create a tsconfig.json
     - specify your source directory in tsconfig.json
     ```json
-    ...
-    "include": ["src/**/*"]
-    // or any other directory that's not src
-    ...
+    {
+        "compilerOptions": {
+            ...
+        },
+        ...
+        "include": ["src/**/*"]
+        // or any other directory that's not src
+    }
     ```
     - optionally toggle inline source map in tsconfig.json (Strongly recommened, because you are very likely to need to use the debugger, although not as convenient as it is in js)
     ```json
-    ...
-    "inlineSourceMap": true,
-    "inlineSources": true,
-    ...
+    {
+        "compilerOptions": {
+            ...
+            "inlineSourceMap": true,
+            "inlineSources": true,
+            ...
+        }
+    }
+
     ```
     - optionally point the out directory to your    liquidbounce script directory if you want to use with hot-reload
     ```json
-    ...
-    "outDir": "./dist",
-    // your path to .minecraft/LiquidBounce/scripts
-    // or link the dist to the script folder if you are using Linux and wish to not pollute the tsconfig.json
-    ...
+    {
+        "compilerOptions": {
+            ...
+            "outDir": "./dist",
+            // your path to .minecraft/LiquidBounce/scripts
+            // or link the dist to the script folder if you are using Linux and wish to not pollute the tsconfig.json
+            ...
+        }
+    }
     ```
 2. Download and install the typescript definitions npm package
     - Go to https://github.com/commandblock2/minecraft-LBNG-types/actions and download the artifacts (no npm package at the moment, might change later)
