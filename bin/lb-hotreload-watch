@@ -1,3 +1,2 @@
-#!/usr/bin/env node
-require('ts-node').register();
-require('../scripts/watch.ts');
+#!/bin/sh
+exec node "$0/../scripts/dist/watch.js" "$@"

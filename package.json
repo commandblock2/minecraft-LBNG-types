@@ -5,7 +5,7 @@
   "author": "commandblock2",
   "license": "GPL-3.0",
   "bin": {
-    "lb-hotreload-watch": "./scripts/dist/watch.js"
+    "lb-hotreload-watch": "./bin/lb-hotreload-watch"
   },
   "scripts": {
     "lb-hotreload-watch": "npx ts-node ./scripts/watch.ts",
