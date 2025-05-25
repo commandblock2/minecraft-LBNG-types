@@ -72,7 +72,7 @@ Adjust the order flexibly to your needs.
 3. Write the scripts with typescript support
     - open the ide of your choice (tested on vscode)
     - open the script folder
-    - run `tsc --watch` at the project root folder
+    - run `npx tsc --watch` at the project root folder
     - `.js` files will be produced in the dist folder
 
 4. (Optional) Use hot reloader
