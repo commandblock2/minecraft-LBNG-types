@@ -41,7 +41,7 @@ Adjust the order flexibly to your needs.
     - install nodejs
     - create a nodejs project: `npm init -y`
     - install typescript: `npm install typescript`
-    - run `tsc --init`, it will create a tsconfig.json
+    - run `npx tsc --init`, it will create a tsconfig.json
     - specify your source directory in tsconfig.json
     ```json
     {

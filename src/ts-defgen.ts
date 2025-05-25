@@ -200,11 +200,12 @@ function work(path: string, packageName: string) {
         Client.displayChatMessage("print embedded script types, see log for more info, those are for maintainace use")
 
         const embeddedDefinition = `
-// embedded.ts
+// ambient.ts
 // imports
+import "../augmentations/index.d.ts"
 ${javaClasses
                 .map((clazz) => {
-                    return `import { ${getName(clazz)} } from "./types/${clazz.name.replaceAll(".", "/")}";`;
+                    return `import { ${getName(clazz)} } from "../types/${clazz.name.replaceAll(".", "/")}";`;
                 })
                 .join("\n")}
 declare global {
@@ -252,7 +253,7 @@ ${eventEntries.map((entry: any) => `on(eventName: "${entry[0]}", handler: (${ent
         // @ts-expect-error
         const Files = Java.type('java.nio.file.Files')
         // @ts-expect-error
-        const filePath = Paths.get(`${path}/types-gen/${packageName}/index.d.ts`);
+        const filePath = Paths.get(`${path}/types-gen/${packageName}/ambient/ambient.d.ts`);
 
         // @ts-expect-error
         Files.createDirectories(filePath.getParent());
