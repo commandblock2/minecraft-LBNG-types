@@ -1,2 +1,0 @@
-#!/bin/sh
-exec node "$0/../scripts/dist/watch.js" "$@"
