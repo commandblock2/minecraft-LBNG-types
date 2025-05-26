@@ -1,13 +1,15 @@
 {
   "name": "minecraft-lbng-types",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "utilities for writing typescripts for LiquidBounce nextgen",
   "author": "commandblock2",
   "license": "GPL-3.0",
   "bin": {
     "lb-hotreload-watch": "./scripts/dist/lb-hotreload-watch"
   },
-  "files": ["scripts/dist"],
+  "files": [
+    "scripts/dist"
+  ],
   "scripts": {
     "lb-hotreload-watch": "npx ts-node ./scripts/watch.ts",
     "build-watch": "tsc --target es2018 --module commonjs scripts/watch.ts --outDir scripts/dist || exit 0 && chmod +x scripts/dist/watch.js",
