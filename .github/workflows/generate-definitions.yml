@@ -67,11 +67,6 @@ jobs:
         run: |
           cp -r augmentations/* ./generated-modules/types-gen/jvm-types/augmentations
 
-      - name: Add ambient.d.ts and augmentations to package.json
-        run: |
-          jq '. + {"types": "ambient/ambient.d.ts"} | .files += ["augmentations/**/*.d.ts", "ambient/ambient.d.ts"] | .typesVersions."*"."*" += ["./augmentations/*", "ambient/ambient.d.ts"]' ./generated-modules/types-gen/jvm-types/package.json > ./generated-modules/types-gen/jvm-types/package.json.tmp
-          mv ./generated-modules/types-gen/jvm-types/package.json.tmp ./generated-modules/types-gen/jvm-types/package.json
-          
       - name: Install Generated Definitions
         run: npm install file:./generated-modules/types-gen/jvm-types/ --no-save
         
