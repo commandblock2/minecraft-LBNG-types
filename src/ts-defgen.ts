@@ -19,6 +19,7 @@ import { ScriptManager } from "jvm-types/net/ccbluex/liquidbounce/script/ScriptM
 import { Exception } from "jvm-types/java/lang/Exception";
 import { FilesKt } from "jvm-types/kotlin/io/FilesKt";
 import { File as JavaFile } from "jvm-types/java/io/File";
+import { LiquidBounce } from "jvm-types/net/ccbluex/liquidbounce/LiquidBounce"
 
 // type: array
 /** @type any[] */
@@ -191,7 +192,16 @@ function work(path: string, packageName: string) {
 
         Client.displayChatMessage("writing types");
         // @ts-expect-error
-        const npmPack = new NPMGen(generated, packageName);
+        const npmPack = new NPMGen(generated, packageName, 
+            `${LiquidBounce.INSTANCE.clientVersion}+${LiquidBounce.INSTANCE.clientCommit}`,
+            // extraFiles - add the ambient and augmentations files
+            `"augmentations/**/*.d.ts", "ambient/ambient.d.ts"`,
+            // extraTypesVersion - add the augmentations and ambient paths  
+            `"./augmentations/*", "ambient/ambient.d.ts"`,
+            // otherExtras - add the types field
+            `"types": "ambient/ambient.d.ts"`
+        );
+
         npmPack.writePackageTo(
             // @ts-expect-error
             Paths.get(path + "/types-gen")
@@ -285,10 +295,10 @@ declare module '../types/net/ccbluex/liquidbounce/script/bindings/features/Scrip
 
         // @ts-expect-error
         const augmentationFilePath = Paths.get(`${path}/types-gen/${packageName}/augmentations/ScriptModule.augmentation.d.ts`);
-        
+
         // @ts-expect-error
         Files.createDirectories(augmentationFilePath.getParent());
-        
+
         Files.writeString(
             augmentationFilePath,
             augmentationContent,
