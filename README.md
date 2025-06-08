@@ -80,7 +80,7 @@ Adjust the order flexibly to your needs.
 2. Download and install the typescript definitions npm package
     - Go to https://github.com/commandblock2/minecraft-LBNG-types/actions and download the artifacts (no npm package at the moment, might change later)
     - unzip the `jvm-types` to a directory
-    - run `npm install file:./path/to/jvm-types --no-save` (if we were to have a npm package, we can just do `npm install` without `--no-save`)
+    - run `npm install jvm-types --no-save`
 
 3. Write the scripts with typescript support
     - open the ide of your choice (tested on vscode)
@@ -89,11 +89,38 @@ Adjust the order flexibly to your needs.
     - `.js` files will be produced in the dist folder
 
 4. (Optional) Use hot reloader
-    - add this repo as a dev dependency: `npm install minecraft-lbng-types --save-dev` (note: if you used `--no-save` for `jvm-types` this would probably wipe your previous `jvm-types` installation and you will need to re-install it)
+    - add this repo as a dev dependency: `npm install minecraft-lbng-types --save-dev`
     - run `npx lb-hotreload-watch`
     - copy the [LBNG-script/hot-reloader.js](LBNG-script/hot-reloader.js) into your script directory
     - enable the module script hot reloader in LiquidBounce after a `.script reload`
     - start modifying your existing script (does not work with newly created scripts yet)
+5. (Optional) Use partial npm ecosystem support
+    - install your dependencies with `npm install <package>`
+        - eg. `npm install typscript`
+    - write ts scripts with typescript support
+        - eg. 
+        ```typescript
+        import * as ts from 'typescript';
+
+        const script = registerScript.apply({
+            name: "node-ecosystem-demo",
+            version: "1.0.0",
+            authors: ["commandblock2"]
+        });
+
+        script.registerModule({
+            name: "example-node-ecosystem-demo-module",
+            description: "Ths is an minimal example module for the node ecosystem demo",
+            category: "Client",
+
+        }, (mod) => {
+            mod.on("enable", () => {
+                Client.displayChatMessage(`All keywords in ts are ${Array.from({ length: ts.SyntaxKind.LastKeyword - ts.SyntaxKind.FirstKeyword + 1 }, (_, i) => ts.tokenToString(ts.SyntaxKind.FirstKeyword + i)).filter(Boolean)}`)
+            })
+        })
+        ```
+    - copy the `node_modules` folder into your LiquidBounce source folder or it's parent folder. (Better to link it with symlink if you are on linux, eg `ln -s node_modules path/to/your/LiquidBounce/script/node_modules` or `ln -s node_modules path/to/your/LiquidBounce/node_modules`)
+    - it's going to be slow (much slower than nodejs probably) and most likely many package that uses node.js (not for browser specifically) will fail to load (it needs to use nodejs api which we don't implement yet, use browserfied version if that package has one)
 
 
 ### Current limitations
