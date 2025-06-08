@@ -100,7 +100,8 @@ Adjust the order flexibly to your needs.
     - write ts scripts with typescript support
         - eg. 
         ```typescript
-        import * as ts from 'typescript';
+        import { SyntaxKind, tokenToString } from 'typescript';
+
 
         const script = registerScript.apply({
             name: "node-ecosystem-demo",
@@ -115,11 +116,11 @@ Adjust the order flexibly to your needs.
 
         }, (mod) => {
             mod.on("enable", () => {
-                Client.displayChatMessage(`All keywords in ts are ${Array.from({ length: ts.SyntaxKind.LastKeyword - ts.SyntaxKind.FirstKeyword + 1 }, (_, i) => ts.tokenToString(ts.SyntaxKind.FirstKeyword + i)).filter(Boolean)}`)
+                Client.displayChatMessage(`All keywords in ts are ${Array.from({ length: SyntaxKind.LastKeyword - SyntaxKind.FirstKeyword + 1 }, (_, i) => tokenToString(SyntaxKind.FirstKeyword + i)).filter(Boolean)}`)
             })
         })
         ```
-    - copy the `node_modules` folder into your LiquidBounce source folder or it's parent folder. (Better to link it with symlink if you are on linux, eg `ln -s node_modules path/to/your/LiquidBounce/script/node_modules` or `ln -s node_modules path/to/your/LiquidBounce/node_modules`)
+    - copy the `node_modules` folder into your LiquidBounce source folder or it's parent folder. (Better to link it with symlink if you are on linux, eg `ln -s path/to/your/development/repo/node_modules/ node_modules` (in liquidbounce script folder or liquidbounce folder)
     - it's going to be slow (much slower than nodejs probably) and most likely many package that uses node.js (not for browser specifically) will fail to load (it needs to use nodejs api which we don't implement yet, use browserfied version if that package has one)
 
 

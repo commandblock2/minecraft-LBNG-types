@@ -1,4 +1,5 @@
-import * as ts from 'typescript';
+import { SyntaxKind, tokenToString } from 'typescript';
+
 
 const script = registerScript.apply({
     name: "node-ecosystem-demo",
@@ -13,6 +14,6 @@ script.registerModule({
 
 }, (mod) => {
     mod.on("enable", () => {
-        Client.displayChatMessage(`All keywords in ts are ${Array.from({ length: ts.SyntaxKind.LastKeyword - ts.SyntaxKind.FirstKeyword + 1 }, (_, i) => ts.tokenToString(ts.SyntaxKind.FirstKeyword + i)).filter(Boolean)}`)
+        Client.displayChatMessage(`All keywords in ts are ${Array.from({ length: SyntaxKind.LastKeyword - SyntaxKind.FirstKeyword + 1 }, (_, i) => tokenToString(SyntaxKind.FirstKeyword + i)).filter(Boolean)}`)
     })
 })
