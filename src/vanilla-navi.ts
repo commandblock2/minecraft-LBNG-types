@@ -31,12 +31,12 @@ script.registerModule({
     })
 
     mod.on("gametick", (event) => {
-        if (remainingTicks > 0 && mc.player) {
+        if (mc.player) {
             mc.player.velocity.y = 0
             mc.player.velocity.x = 0
             mc.player.velocity.z = 0
 
-            if (mc.player.pos.getY() < 384) {
+            if (mc.player.pos.getY() < 384 && remainingTicks > 0) {
                 mc.player.setPosition(mc.player.pos.add(
                     0, 10 - 1e-4, 0
                 ))
