@@ -1,0 +1,19 @@
+{
+  "name": "lbng-utils-typed",
+  "version": "1.0.0",
+  "description": "Utils for scripting LBNG(graaljs), of my own taste instead of ccbluex's, written in typescript.",
+  "author": "commandblock2",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "jvm-types": "^0.30.1"
+  },
+  "typesVersions": {
+    "*": {
+      "*": ["dist/*"],
+      "dist/*": ["dist/*"]
+    }
+  },
+  "files": [
+    "dist"
+  ]
+}
