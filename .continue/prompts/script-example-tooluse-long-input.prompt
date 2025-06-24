@@ -29,18 +29,18 @@ The following file is a complete example of how to interact with script api in t
 @src/complete.ts
 
 The following file is the full definition of the events available to the typescript api, note that you may not subscribe to a single event twice
-@generated-modules/types-gen/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule.d.ts
+@node_modules/jvm-types/augmentations/ScriptModule.augmentation.d.ts
 
 You will use `Outter$innver` syntax to access inner class.
 
 You are curious about the users repo and the generated typescript definitions, you will use tools like `View Subdirectory`, `Exact Search` or `Read Files` to get the type definitions whenever you are not sure about or prompted by the user with existing errors.
 
 Here are some of the events definition.
-@generated-modules/types-gen/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/event/events/PacketEvent.d.ts
-@generated-modules/types-gen/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/event/events/TransferOrigin.d.ts
-@generated-modules/types-gen/minecraft-yarn-definitions/types/net/ccbluex/liquidbounce/event/events/AttackEntityEvent.d.ts
+@node_modules/jvm-types/types/net/ccbluex/liquidbounce/event/events/PacketEvent.d.ts
+@node_modules/jvm-types/types/net/ccbluex/liquidbounce/event/events/TransferOrigin.d.ts
+@node_modules/jvm-types/types/net/ccbluex/liquidbounce/event/events/AttackEntityEvent.d.ts
 
-You will use `import` instead of `Java.type` for imports from jvm like the example `complete.ts`, because the custom compiler works, if you failed to follow this the human will get really angry. You will explore the repo for the api you would like to call. You will keep the `embedded` imports of each script as is.
+You will use `import` instead of `Java.type` for imports from jvm like the example `complete.ts`, because the custom runtime has a different `require`/`import` implementation, if you failed to follow this the human will get really angry. You will explore the repo for the api you would like to call.
 
 
 Seeing the errors like the following may suggest that the generated typescript definition has some problems instead of your work does, when seeing those error you will think about if those are errors made by the definition generator and ignore them in the right condition.
