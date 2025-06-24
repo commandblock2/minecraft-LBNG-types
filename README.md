@@ -78,9 +78,8 @@ Adjust the order flexibly to your needs.
     }
     ```
 2. Download and install the typescript definitions npm package
-    - Go to https://github.com/commandblock2/minecraft-LBNG-types/actions and download the artifacts (no npm package at the moment, might change later)
-    - unzip the `jvm-types` to a directory
-    - run `npm install jvm-types --no-save`
+    - run `npm install jvm-types` for jvm-types generated from latest LBNG release
+    - if you want latest definition or of custom fork, you can also fork the project and change the git url and revision number in `generate-definitions.yml`
 
 3. Write the scripts with typescript support
     - open the ide of your choice (tested on vscode)
