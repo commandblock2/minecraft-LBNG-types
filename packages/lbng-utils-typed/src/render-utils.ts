@@ -16,6 +16,8 @@ export function renderBoxes(
     outlineColor: Color4b,
     fillColor: Color4b) {
 
+    var dirty = false;
+
     RenderShortcutsKt.renderEnvironmentForWorld(
         matrixStack,
         // @ts-expect-error
@@ -31,6 +33,7 @@ export function renderBoxes(
                             // @ts-expect-error
                             (_: WorldRenderEnvironment) => {
                                 boxRenderer.drawBox(box, fillColor, outlineColor, -1, -1)
+                                dirty = true;
                             }
                         )
                     });
@@ -38,4 +41,6 @@ export function renderBoxes(
             )
         }
     )
+
+    return dirty;
 }

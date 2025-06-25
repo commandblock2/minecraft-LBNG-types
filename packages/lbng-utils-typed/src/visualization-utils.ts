@@ -5,6 +5,16 @@ import { MatrixStack } from "jvm-types/net/minecraft/client/util/math/MatrixStac
 import { renderBoxes } from "./render-utils";
 import { RenderShortcutsKt } from "jvm-types/net/ccbluex/liquidbounce/render/RenderShortcutsKt";
 import { WorldRenderEnvironment } from "jvm-types/net/ccbluex/liquidbounce/render/WorldRenderEnvironment";
+import { EventListener } from "jvm-types/net/ccbluex/liquidbounce/event/EventListener";
+import { Object } from "jvm-types/java/lang/Object";
+import { Unit } from "jvm-types/kotlin/Unit";
+import { ScriptModule } from "jvm-types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule";
+import { EventManager } from "jvm-types/net/ccbluex/liquidbounce/event/EventManager";
+import { DrawOutlinesEvent } from "jvm-types/net/ccbluex/liquidbounce/event/events/DrawOutlinesEvent";
+import { EventHook } from "jvm-types/net/ccbluex/liquidbounce/event/EventHook";
+import { Priority } from "jvm-types/net/ccbluex/liquidbounce/utils/kotlin/Priority";
+import { GameTickEvent } from "jvm-types/net/ccbluex/liquidbounce/event/events/GameTickEvent";
+import { DrawOutlinesEvent$OutlineType } from "jvm-types/net/ccbluex/liquidbounce/event/events/DrawOutlinesEvent$OutlineType";
 
 // --- Enums and Interfaces ---
 
@@ -20,6 +30,7 @@ export type ColorInterpolator = (progress: number) => Color4b;
 export interface BoxData {
     box: Box;
     position: Vec3d;
+    glow: boolean;
     outlineInterpolator?: ColorInterpolator;
     fillInterpolator?: ColorInterpolator;
 }
@@ -41,34 +52,38 @@ export interface Visualization {
 
 // --- Default Interpolation Functions ---
 
-export const defaultRainbowInterpolator: ColorInterpolator = (progress: number): Color4b => {
-    // A proper rainbow would cycle through hues.
-    // HSV to RGB conversion (simplified for hue only)
-    const hue = progress * 360; // Cycle through 360 degrees of hue
-    const saturation = 1;
-    const value = 1;
+export function rainbowInterpolatorWithAlpha(alpha: number): ColorInterpolator {
+    return (progress: number): Color4b => {
+        // A proper rainbow would cycle through hues.
+        // HSV to RGB conversion (simplified for hue only)
+        const hue = progress * 360; // Cycle through 360 degrees of hue
+        const saturation = 1;
+        const value = 1;
 
-    // Convert HSV to RGB
-    const i = Math.floor(hue / 60);
-    const f = hue / 60 - i;
-    const p = value * (1 - saturation);
-    const q = value * (1 - f * saturation);
-    const t = value * (1 - (1 - f) * saturation);
+        // Convert HSV to RGB
+        const i = Math.floor(hue / 60);
+        const f = hue / 60 - i;
+        const p = value * (1 - saturation);
+        const q = value * (1 - f * saturation);
+        const t = value * (1 - (1 - f) * saturation);
 
-    let r = 0, g = 0, b = 0;
-    switch (i % 6) {
-        case 0: r = value; g = t; b = p; break;
-        case 1: r = q; g = value; b = p; break;
-        case 2: r = p; g = value; b = t; break;
-        case 3: r = p; g = q; b = value; break;
-        case 4: r = t; g = p; b = value; break;
-        case 5: r = value; g = p; b = q; break;
-    }
+        let r = 0, g = 0, b = 0;
+        switch (i % 6) {
+            case 0: r = value; g = t; b = p; break;
+            case 1: r = q; g = value; b = p; break;
+            case 2: r = p; g = value; b = t; break;
+            case 3: r = p; g = q; b = value; break;
+            case 4: r = t; g = p; b = value; break;
+            case 5: r = value; g = p; b = q; break;
+        }
 
-    return new Color4b(Math.floor(r * 255), Math.floor(g * 255), Math.floor(b * 255), 255);
-};
+        return new Color4b(Math.floor(r * 255), Math.floor(g * 255), Math.floor(b * 255), alpha);
+    };
+}
 
-export function createFadeOutInterpolator(baseColor: Color4b): ColorInterpolator {
+export const defaultRainbowInterpolator: ColorInterpolator = rainbowInterpolatorWithAlpha(255);
+
+export function fadeOutInterpolatorFrom(baseColor: Color4b): ColorInterpolator {
     return (progress: number): Color4b => {
         const alpha = baseColor.a() * (1 - progress);
         return new Color4b(baseColor.r(), baseColor.g(), baseColor.b(), Math.floor(alpha));
@@ -80,9 +95,25 @@ export function createFadeOutInterpolator(baseColor: Color4b): ColorInterpolator
 // TODO: actually test this
 
 export class VisualizationManager {
+
     private visualizations: Map<string, Visualization> = new Map();
     private currentTick: number = 0;
     private nextId: number = 0;
+
+    private scriptModule: ScriptModule;
+
+    constructor(scriptModule: ScriptModule) {
+        this.scriptModule = scriptModule
+        // @ts-expect-error
+        EventManager.INSTANCE.registerEventHook(DrawOutlinesEvent.class, new EventHook(scriptModule, (event: DrawOutlinesEvent) => {
+            this.onWorldRender(event)
+        }, Priority.NORMAL.ordinal()))
+
+        // @ts-expect-error
+        EventManager.INSTANCE.registerEventHook(GameTickEvent.class, new EventHook(scriptModule, (event: GameTickEvent) => {
+            this.onTick()
+        }, Priority.NORMAL.ordinal()))
+    }
 
     public onTick(): void {
         this.currentTick++;
@@ -99,21 +130,26 @@ export class VisualizationManager {
         expiredIds.forEach(id => this.visualizations.delete(id));
     }
 
-    public onWorldRender(matrixStack: MatrixStack): void {
+    public onWorldRender(outlinesEvent: DrawOutlinesEvent): void {
+        const matrixStack = outlinesEvent.matrixStack
         this.visualizations.forEach(viz => {
             const ticksRemaining = (viz.creationTick + viz.durationTicks) - this.currentTick;
             const progress = 1 - (ticksRemaining / viz.durationTicks); // 0 at start, 1 at end
 
             if (viz.boxData) {
-                const currentOutlineColor = (viz.boxData.outlineInterpolator || defaultRainbowInterpolator)(progress);
-                const currentFillColor = (viz.boxData.fillInterpolator || defaultRainbowInterpolator)(progress);
+                if (!viz.boxData.glow || outlinesEvent.type == DrawOutlinesEvent$OutlineType.MINECRAFT_GLOW) {
 
-                renderBoxes(
-                    [[viz.boxData.box, viz.boxData.position]],
-                    matrixStack,
-                    currentOutlineColor,
-                    currentFillColor
-                );
+                    const currentOutlineColor = (viz.boxData.outlineInterpolator || defaultRainbowInterpolator)(progress);
+                    const currentFillColor = (viz.boxData.fillInterpolator || defaultRainbowInterpolator)(progress);
+
+                    if (renderBoxes(
+                        [[viz.boxData.box, viz.boxData.position]],
+                        matrixStack,
+                        currentOutlineColor,
+                        currentFillColor
+                    ))
+                        outlinesEvent.markDirty();
+                }
             }
 
             if (viz.textData) {
@@ -129,7 +165,7 @@ export class VisualizationManager {
                         viz.boxData.box.minY + (viz.boxData.box.maxY - viz.boxData.box.minY) / 2,
                         viz.boxData.box.minZ + (viz.boxData.box.maxZ - viz.boxData.box.minZ) / 2
                     );
-                    
+
                     switch (viz.textData.textPositionEnum) {
                         case TextPosition.TOP_CENTER:
                             textRenderPos = new Vec3d(boxCenter.getX(), viz.boxData.box.maxY + 0.2, boxCenter.getZ());
@@ -169,6 +205,7 @@ export class VisualizationManager {
         box: Box,
         position: Vec3d,
         durationTicks: number,
+        glow: boolean = true,
         outlineInterpolator?: ColorInterpolator,
         fillInterpolator?: ColorInterpolator
     ): string {
@@ -180,6 +217,7 @@ export class VisualizationManager {
             boxData: {
                 box,
                 position,
+                glow,
                 outlineInterpolator,
                 fillInterpolator,
             },
@@ -216,6 +254,7 @@ export class VisualizationManager {
         durationTicks: number,
         textPositionEnum: TextPosition = TextPosition.TOP_CENTER,
         textOffsetVec3d?: Vec3d,
+        glow: boolean = true,
         outlineInterpolator?: ColorInterpolator,
         fillInterpolator?: ColorInterpolator
     ): string {
@@ -227,6 +266,7 @@ export class VisualizationManager {
             boxData: {
                 box,
                 position: boxPosition,
+                glow,
                 outlineInterpolator,
                 fillInterpolator,
             },
