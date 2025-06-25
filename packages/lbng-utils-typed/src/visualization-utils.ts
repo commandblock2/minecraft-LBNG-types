@@ -139,14 +139,14 @@ export class VisualizationManager {
             if (viz.boxData) {
                 if (!viz.boxData.glow || outlinesEvent.type == DrawOutlinesEvent$OutlineType.MINECRAFT_GLOW) {
 
-                    const currentOutlineColor = (viz.boxData.outlineInterpolator || defaultRainbowInterpolator)(progress);
+                    const currentOutlineColor = viz.boxData.outlineInterpolator ? viz.boxData.outlineInterpolator(progress) : null;
                     const currentFillColor = (viz.boxData.fillInterpolator || defaultRainbowInterpolator)(progress);
 
                     if (renderBoxes(
                         [[viz.boxData.box, viz.boxData.position]],
                         matrixStack,
-                        currentOutlineColor,
-                        currentFillColor
+                        currentFillColor,
+                        currentOutlineColor
                     ))
                         outlinesEvent.markDirty();
                 }
@@ -201,13 +201,14 @@ export class VisualizationManager {
         });
     }
 
+    // TODO: refactor this to be typescript
     public addBoxVisualization(
         box: Box,
         position: Vec3d,
         durationTicks: number,
         glow: boolean = true,
-        outlineInterpolator?: ColorInterpolator,
-        fillInterpolator?: ColorInterpolator
+        fillInterpolator: ColorInterpolator,
+        outlineInterpolator?: ColorInterpolator
     ): string {
         const id = `viz-${this.nextId++}`;
         this.visualizations.set(id, {
@@ -255,8 +256,8 @@ export class VisualizationManager {
         textPositionEnum: TextPosition = TextPosition.TOP_CENTER,
         textOffsetVec3d?: Vec3d,
         glow: boolean = true,
+        fillInterpolator?: ColorInterpolator,
         outlineInterpolator?: ColorInterpolator,
-        fillInterpolator?: ColorInterpolator
     ): string {
         const id = `viz-${this.nextId++}`;
         this.visualizations.set(id, {

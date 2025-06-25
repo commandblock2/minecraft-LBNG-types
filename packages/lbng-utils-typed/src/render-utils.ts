@@ -13,8 +13,8 @@ import { Vec3d } from "jvm-types/net/minecraft/util/math/Vec3d"
 export function renderBoxes(
     boxesWithPosition: Array<[Box, Vec3d]>,
     matrixStack: MatrixStack,
-    outlineColor: Color4b,
-    fillColor: Color4b) {
+    fillColor: Color4b,
+    outlineColor: Color4b | null) {
 
     var dirty = false;
 

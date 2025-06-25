@@ -36,15 +36,14 @@ script.registerModule({
         if (packet instanceof BlockUpdateS2CPacket) {
             const pos: BlockPos = packet.getPos();
             const box = new Box(pos.getX(), pos.getY(), pos.getZ(), pos.getX() + 1, pos.getY() + 1, pos.getZ() + 1);
-            const displayTicks = Math.floor(mod.settings.displayTime.getValue() / 50); // Convert ms to ticks (20 ticks/sec)
+
 
             visualizationManager.addBoxVisualization(
                 box,
                 new Vec3d(0, 0, 0), // Position offset for the box, 0,0,0 for blockpos
-                displayTicks,
+                mod.settings.displayTime.getValue(),
                 true,
                 defaultRainbowInterpolator,
-                defaultRainbowInterpolator, // Using 150 for alpha (semi-transparent)
             );
         }
     });
