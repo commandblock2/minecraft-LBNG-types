@@ -22,6 +22,7 @@ import { VertexInputType$Pos } from "jvm-types/net/ccbluex/liquidbounce/render/V
 import { GL11 } from "jvm-types/org/lwjgl/opengl/GL11";
 import { RenderSystem } from "jvm-types/com/mojang/blaze3d/systems/RenderSystem";
 import { Vec3 } from "jvm-types/net/ccbluex/liquidbounce/render/engine/type/Vec3";
+import { MinecraftClient } from "jvm-types/net/minecraft/client/MinecraftClient";
 
 // --- Enums and Interfaces ---
 
@@ -193,6 +194,8 @@ export class VisualizationManager {
             // @ts-expect-error
             (env: RenderEnvironment) => {
 
+                const cameraPos = MinecraftClient.instance.gameRenderer.getCamera().getPos();
+
                 try {
                     [...this.visualizations.values()]
                         .map((viz) => {
@@ -238,8 +241,7 @@ export class VisualizationManager {
                                     textRenderPos = textRenderPos.add(viz.textData.textOffsetVec3d);
                                 }
 
-                                // @ts-expect-error
-                                const cameraPos = mc.gameRenderer.getCamera().getPos();
+                                
                                 return [
                                     WorldToScreen.INSTANCE.calculateScreenPos(textRenderPos, cameraPos),
                                     lines
@@ -247,7 +249,7 @@ export class VisualizationManager {
                             }
                             return undefined
                         })
-                        .filter((data) => data !== undefined && data !== null && data[0] !== undefined)
+                        .filter((data) =>  data != undefined && data != null && data[0] != null && data[0] != undefined)
                         .sort((a, b) => a![0]!.x() - b![0]!.x())
                         .forEach((data, index) => {
                             const [pos, lines] = data!
