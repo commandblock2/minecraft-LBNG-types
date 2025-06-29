@@ -1,3 +1,5 @@
+import { ScriptModule } from "jvm-types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule";
+
 const script = registerScript.apply({
     name: "vanilla-navi",
     version: "1.0.0",
@@ -64,11 +66,31 @@ script.registerModule({
                     mc.player.setPosition(mc.player.pos.add(moveX, -0.03126, moveZ))
                 } else {
                     remainingTicks = 0
-                    mod.disable()
+                    mod.enabled = false
                 }
 
             }
         }
+    })
+
+
+    script.registerCommand({
+        name: "vanilla-goto",
+        parameters: [{
+            name: "x",
+            required: true,
+            validate: ParameterValidator.integer
+        }, {
+            name: "z",
+            required: true,
+            validate: ParameterValidator.integer
+        }
+        ],
+        onExecute(x: number, z: number) {
+            mod.settings.destX.setValue(x)
+            mod.settings.destZ.setValue(z)
+            mod.enabled = true
+        },
     })
 
 })
