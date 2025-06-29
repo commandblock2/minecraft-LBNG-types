@@ -36,9 +36,8 @@ script.registerModule({
         if (!mc.player || !event.original)
             return;
 
+
         try {
-
-
 
             if (event.origin == TransferOrigin.INCOMING) {
                 event.cancelEvent()
@@ -77,12 +76,10 @@ script.registerModule({
             element.tick--
         });
 
-        // Client.displayChatMessage(`size of packetList: ${packetList.length}`)
-
         packetList.forEach(element => {
             if (element.tick <= 0) {
                 const packetEvent = new PacketEvent(
-                    TransferOrigin.OUTGOING,
+                    TransferOrigin.INCOMING,
                     element.packet,
                     false
                 );
@@ -96,6 +93,9 @@ script.registerModule({
         });
 
         packetList = packetList.filter(element => element.tick > 0)
+
+
+        // Client.displayChatMessage(`size of packetList: ${packetList.length}`)
     })
 
     mod.on("serverconnect", (event) => {
