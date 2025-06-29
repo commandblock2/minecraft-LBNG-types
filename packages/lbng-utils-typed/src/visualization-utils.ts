@@ -193,115 +193,117 @@ export class VisualizationManager {
             // @ts-expect-error
             (env: RenderEnvironment) => {
 
-                [...this.visualizations.values()]
-                    .map((viz) => {
-                        const ticksRemaining = (viz.creationTick + viz.durationTicks) - this.currentTick;
-                        if (viz.textData) {
+                try {
+                    [...this.visualizations.values()]
+                        .map((viz) => {
+                            const ticksRemaining = (viz.creationTick + viz.durationTicks) - this.currentTick;
+                            if (viz.textData) {
 
-                            const lines = viz.textData.textProvider(viz.durationTicks, ticksRemaining);
-                            let textRenderPos = viz.textData.position;
+                                const lines = viz.textData.textProvider(viz.durationTicks, ticksRemaining);
+                                let textRenderPos = viz.textData.position;
 
-                            // Calculate text position based on enum and offset
-                            if (viz.boxData) { // If text is associated with a box, calculate relative to box
-                                const boxCenter = new Vec3d(
-                                    viz.boxData.box.minX + (viz.boxData.box.maxX - viz.boxData.box.minX) / 2,
-                                    viz.boxData.box.minY + (viz.boxData.box.maxY - viz.boxData.box.minY) / 2,
-                                    viz.boxData.box.minZ + (viz.boxData.box.maxZ - viz.boxData.box.minZ) / 2
-                                );
+                                // Calculate text position based on enum and offset
+                                if (viz.boxData) { // If text is associated with a box, calculate relative to box
+                                    const boxCenter = new Vec3d(
+                                        viz.boxData.box.minX + (viz.boxData.box.maxX - viz.boxData.box.minX) / 2,
+                                        viz.boxData.box.minY + (viz.boxData.box.maxY - viz.boxData.box.minY) / 2,
+                                        viz.boxData.box.minZ + (viz.boxData.box.maxZ - viz.boxData.box.minZ) / 2
+                                    );
 
-                                switch (viz.textData.textPositionEnum) {
-                                    case TextPosition.TOP_CENTER:
-                                        textRenderPos = new Vec3d(boxCenter.getX(), viz.boxData.box.maxY + 0.2, boxCenter.getZ());
-                                        break;
-                                    case TextPosition.BOTTOM_CENTER:
-                                        textRenderPos = new Vec3d(boxCenter.getX(), viz.boxData.box.minY - 0.2, boxCenter.getZ());
-                                        break;
-                                    case TextPosition.CENTER:
-                                        textRenderPos = boxCenter;
-                                        break;
-                                    case TextPosition.CUSTOM_OFFSET:
-                                        // textRenderPos is already the base position, apply offset
-                                        if (viz.textData.textOffsetVec3d) {
-                                            textRenderPos = textRenderPos.add(viz.textData.textOffsetVec3d);
-                                        }
-                                        break;
+                                    switch (viz.textData.textPositionEnum) {
+                                        case TextPosition.TOP_CENTER:
+                                            textRenderPos = new Vec3d(boxCenter.getX(), viz.boxData.box.maxY + 0.2, boxCenter.getZ());
+                                            break;
+                                        case TextPosition.BOTTOM_CENTER:
+                                            textRenderPos = new Vec3d(boxCenter.getX(), viz.boxData.box.minY - 0.2, boxCenter.getZ());
+                                            break;
+                                        case TextPosition.CENTER:
+                                            textRenderPos = boxCenter;
+                                            break;
+                                        case TextPosition.CUSTOM_OFFSET:
+                                            // textRenderPos is already the base position, apply offset
+                                            if (viz.textData.textOffsetVec3d) {
+                                                textRenderPos = textRenderPos.add(viz.textData.textOffsetVec3d);
+                                            }
+                                            break;
+                                    }
+                                } else { // If text is standalone, use its provided position as base
+                                    if (viz.textData.textPositionEnum === TextPosition.CUSTOM_OFFSET && viz.textData.textOffsetVec3d) {
+                                        textRenderPos = textRenderPos.add(viz.textData.textOffsetVec3d);
+                                    }
                                 }
-                            } else { // If text is standalone, use its provided position as base
-                                if (viz.textData.textPositionEnum === TextPosition.CUSTOM_OFFSET && viz.textData.textOffsetVec3d) {
+
+                                // Apply custom offset if provided and not handled by enum logic
+                                if (viz.textData.textPositionEnum !== TextPosition.CUSTOM_OFFSET && viz.textData.textOffsetVec3d) {
                                     textRenderPos = textRenderPos.add(viz.textData.textOffsetVec3d);
                                 }
-                            }
 
-                            // Apply custom offset if provided and not handled by enum logic
-                            if (viz.textData.textPositionEnum !== TextPosition.CUSTOM_OFFSET && viz.textData.textOffsetVec3d) {
-                                textRenderPos = textRenderPos.add(viz.textData.textOffsetVec3d);
+                                // @ts-expect-error
+                                const cameraPos = mc.gameRenderer.getCamera().getPos();
+                                return [
+                                    WorldToScreen.INSTANCE.calculateScreenPos(textRenderPos, cameraPos),
+                                    lines
+                                ] as [Vec3 | null, string[]];
                             }
+                            return undefined
+                        })
+                        .filter((data) => data !== undefined && data !== null && data[0] !== undefined)
+                        .sort((a, b) => a![0]!.x() - b![0]!.x())
+                        .forEach((data, index) => {
+                            const [pos, lines] = data!
+                            drawTextWithBackground(
+                                env,
+                                lines,
+                                pos!.x(),
+                                pos!.y(),
+                                index * 1000,
+                                textColor,
+                                FontManager.INSTANCE.FONT_RENDERER,
+                                quadBuffers,
+                                lineBuffers,
+                                fontBuffers
+                            )
+                        });
+                } finally {
+                    // commit
+                    GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT)
+                    GL11.glEnable(GL11.GL_DEPTH_TEST)
 
-                            // @ts-expect-error
-                            const cameraPos = mc.gameRenderer.getCamera().getPos();
-                            return [
-                                WorldToScreen.INSTANCE.calculateScreenPos(textRenderPos, cameraPos),
-                                lines
-                            ] as [Vec3 | null, string[]];
+                    RenderSystem.enableBlend()
+                    RenderSystem.blendFuncSeparate(
+                        GL11.GL_SRC_ALPHA,
+                        GL11.GL_ONE_MINUS_SRC_ALPHA,
+                        GL11.GL_ONE,
+                        GL11.GL_ZERO
+                    )
+
+                    RenderShortcutsKt.withColor(
+                        env,
+                        new Color4b(30, 30, 30, 120),
+                        // @ts-expect-error
+                        (env_: RenderEnvironment) => {
+                            quadBuffers.draw()
                         }
-                        return undefined
-                    })
-                    .filter((data) => data !== undefined && data !== null && data[0] !== undefined)
-                    .sort((a, b) => a![0]!.x() - b![0]!.x())
-                    .forEach((data, index) => {
-                        const [pos, lines] = data!
-                        drawTextWithBackground(
-                            env,
-                            lines,
-                            pos!.x(),
-                            pos!.y(),
-                            index * 1000,
-                            textColor,
-                            FontManager.INSTANCE.FONT_RENDERER,
-                            quadBuffers,
-                            lineBuffers,
-                            fontBuffers
-                        )
-                    });
+                    )
 
-                // commit
-                GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT)
-                GL11.glEnable(GL11.GL_DEPTH_TEST)
+                    RenderShortcutsKt.withColor(
+                        env,
+                        new Color4b(255, 255, 255, 255),
+                        // @ts-expect-error
+                        (env_: RenderEnvironment) => {
+                            lineBuffers.draw()
+                        }
+                    )
 
-                RenderSystem.enableBlend()
-                RenderSystem.blendFuncSeparate(
-                    GL11.GL_SRC_ALPHA,
-                    GL11.GL_ONE_MINUS_SRC_ALPHA,
-                    GL11.GL_ONE,
-                    GL11.GL_ZERO
-                )
-
-                RenderShortcutsKt.withColor(
-                    env,
-                    new Color4b(30, 30, 30, 120),
-                    // @ts-expect-error
-                    (env_: RenderEnvironment) => {
-                        quadBuffers.draw()
-                    }
-                )
-
-                RenderShortcutsKt.withColor(
-                    env,
-                    new Color4b(255, 255, 255, 255),
-                    // @ts-expect-error
-                    (env_: RenderEnvironment) => {
-                        lineBuffers.draw()
-                    }
-                )
-
-                RenderShortcutsKt.withColor(
-                    env,
-                    textColor,
-                    // @ts-expect-error
-                    (env_: RenderEnvironment) => {
-                        fontBuffers.draw()
-                    }
-                )
+                    RenderShortcutsKt.withColor(
+                        env,
+                        textColor,
+                        // @ts-expect-error
+                        (env_: RenderEnvironment) => {
+                            fontBuffers.draw()
+                        }
+                    )
+                }
             })
     }
 
