@@ -1,13 +1,8 @@
 import { Box } from "jvm-types/net/minecraft/util/math/Box";
 import { Vec3d } from "jvm-types/net/minecraft/util/math/Vec3d";
 import { Color4b } from "jvm-types/net/ccbluex/liquidbounce/render/engine/type/Color4b";
-import { MatrixStack } from "jvm-types/net/minecraft/client/util/math/MatrixStack";
-import { renderBoxes } from "./render-utils";
+import { drawTextWithBackground, renderBoxes } from "./render-utils";
 import { RenderShortcutsKt } from "jvm-types/net/ccbluex/liquidbounce/render/RenderShortcutsKt";
-import { WorldRenderEnvironment } from "jvm-types/net/ccbluex/liquidbounce/render/WorldRenderEnvironment";
-import { EventListener } from "jvm-types/net/ccbluex/liquidbounce/event/EventListener";
-import { Object } from "jvm-types/java/lang/Object";
-import { Unit } from "jvm-types/kotlin/Unit";
 import { ScriptModule } from "jvm-types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule";
 import { EventManager } from "jvm-types/net/ccbluex/liquidbounce/event/EventManager";
 import { DrawOutlinesEvent } from "jvm-types/net/ccbluex/liquidbounce/event/events/DrawOutlinesEvent";
@@ -15,6 +10,18 @@ import { EventHook } from "jvm-types/net/ccbluex/liquidbounce/event/EventHook";
 import { Priority } from "jvm-types/net/ccbluex/liquidbounce/utils/kotlin/Priority";
 import { GameTickEvent } from "jvm-types/net/ccbluex/liquidbounce/event/events/GameTickEvent";
 import { DrawOutlinesEvent$OutlineType } from "jvm-types/net/ccbluex/liquidbounce/event/events/DrawOutlinesEvent$OutlineType";
+import { RenderEnvironment } from "jvm-types/net/ccbluex/liquidbounce/render/RenderEnvironment";
+import { FontManager } from "jvm-types/net/ccbluex/liquidbounce/render/FontManager";
+import { WorldToScreen } from "jvm-types/net/ccbluex/liquidbounce/utils/render/WorldToScreen";
+import { OverlayRenderEvent } from "jvm-types/net/ccbluex/liquidbounce/event/events/OverlayRenderEvent";
+import { MatrixStack } from "jvm-types/net/minecraft/client/util/math/MatrixStack";
+import { RenderBufferBuilder } from "jvm-types/net/ccbluex/liquidbounce/render/RenderBufferBuilder";
+import { FontRendererBuffers } from "jvm-types/net/ccbluex/liquidbounce/render/engine/font/FontRendererBuffers";
+import { VertexFormat$DrawMode } from "jvm-types/net/minecraft/client/render/VertexFormat$DrawMode";
+import { VertexInputType$Pos } from "jvm-types/net/ccbluex/liquidbounce/render/VertexInputType$Pos";
+import { GL11 } from "jvm-types/org/lwjgl/opengl/GL11";
+import { RenderSystem } from "jvm-types/com/mojang/blaze3d/systems/RenderSystem";
+import { Vec3 } from "jvm-types/net/ccbluex/liquidbounce/render/engine/type/Vec3";
 
 // --- Enums and Interfaces ---
 
@@ -32,11 +39,11 @@ export interface BoxData {
     position: Vec3d;
     glow: boolean;
     outlineInterpolator?: ColorInterpolator;
-    fillInterpolator?: ColorInterpolator;
+    fillInterpolator: ColorInterpolator;
 }
 
 export interface TextData {
-    textProvider: () => string;
+    textProvider: (durationTicks: number, ticksRemaining: number) => Array<string>;
     position: Vec3d; // Base world position for the text
     textPositionEnum: TextPosition;
     textOffsetVec3d?: Vec3d; // Optional custom offset
@@ -48,6 +55,12 @@ export interface Visualization {
     durationTicks: number;
     boxData?: BoxData;
     textData?: TextData;
+}
+
+export interface AddVisualizationOptions {
+    durationTicks: number;
+    boxData?: Partial<BoxData>;
+    textData?: Partial<TextData>;
 }
 
 // --- Default Interpolation Functions ---
@@ -100,10 +113,8 @@ export class VisualizationManager {
     private currentTick: number = 0;
     private nextId: number = 0;
 
-    private scriptModule: ScriptModule;
 
     constructor(scriptModule: ScriptModule) {
-        this.scriptModule = scriptModule
         // @ts-expect-error
         EventManager.INSTANCE.registerEventHook(DrawOutlinesEvent.class, new EventHook(scriptModule, (event: DrawOutlinesEvent) => {
             this.onWorldRender(event)
@@ -112,6 +123,11 @@ export class VisualizationManager {
         // @ts-expect-error
         EventManager.INSTANCE.registerEventHook(GameTickEvent.class, new EventHook(scriptModule, (event: GameTickEvent) => {
             this.onTick()
+        }, Priority.NORMAL.ordinal()))
+
+        // @ts-expect-error
+        EventManager.INSTANCE.registerEventHook(OverlayRenderEvent.class, new EventHook(scriptModule, (event: OverlayRenderEvent) => {
+            this.onGUIRender(event)
         }, Priority.NORMAL.ordinal()))
     }
 
@@ -152,135 +168,166 @@ export class VisualizationManager {
                 }
             }
 
-            if (viz.textData) {
-                // TODO: Implement text rendering here.
-                // For now, we'll just log the text and its calculated position.
-                const text = viz.textData.textProvider();
-                let textRenderPos = viz.textData.position;
+        });
+    }
 
-                // Calculate text position based on enum and offset
-                if (viz.boxData) { // If text is associated with a box, calculate relative to box
-                    const boxCenter = new Vec3d(
-                        viz.boxData.box.minX + (viz.boxData.box.maxX - viz.boxData.box.minX) / 2,
-                        viz.boxData.box.minY + (viz.boxData.box.maxY - viz.boxData.box.minY) / 2,
-                        viz.boxData.box.minZ + (viz.boxData.box.maxZ - viz.boxData.box.minZ) / 2
-                    );
+    public onGUIRender(overlayRenderEvent: OverlayRenderEvent) {
+        const quadBuffers = new RenderBufferBuilder(
+            VertexFormat$DrawMode.QUADS,
+            VertexInputType$Pos.INSTANCE,
+            RenderBufferBuilder.Companion.TESSELATOR_A
+        )
 
-                    switch (viz.textData.textPositionEnum) {
-                        case TextPosition.TOP_CENTER:
-                            textRenderPos = new Vec3d(boxCenter.getX(), viz.boxData.box.maxY + 0.2, boxCenter.getZ());
-                            break;
-                        case TextPosition.BOTTOM_CENTER:
-                            textRenderPos = new Vec3d(boxCenter.getX(), viz.boxData.box.minY - 0.2, boxCenter.getZ());
-                            break;
-                        case TextPosition.CENTER:
-                            textRenderPos = boxCenter;
-                            break;
-                        case TextPosition.CUSTOM_OFFSET:
-                            // textRenderPos is already the base position, apply offset
-                            if (viz.textData.textOffsetVec3d) {
+        const lineBuffers = new RenderBufferBuilder(
+            VertexFormat$DrawMode.DEBUG_LINES,
+            VertexInputType$Pos.INSTANCE,
+            RenderBufferBuilder.Companion.TESSELATOR_B
+        )
+
+        const fontBuffers = new FontRendererBuffers()
+        let i = 0
+
+        const textColor = Color4b.access$getGREEN$cp().alpha(180)
+
+        RenderShortcutsKt.renderEnvironmentForGUI(new MatrixStack(),
+            // @ts-expect-error
+            (env: RenderEnvironment) => {
+
+                [...this.visualizations.values()]
+                    .map((viz) => {
+                        const ticksRemaining = (viz.creationTick + viz.durationTicks) - this.currentTick;
+                        if (viz.textData) {
+
+                            const lines = viz.textData.textProvider(viz.durationTicks, ticksRemaining);
+                            let textRenderPos = viz.textData.position;
+
+                            // Calculate text position based on enum and offset
+                            if (viz.boxData) { // If text is associated with a box, calculate relative to box
+                                const boxCenter = new Vec3d(
+                                    viz.boxData.box.minX + (viz.boxData.box.maxX - viz.boxData.box.minX) / 2,
+                                    viz.boxData.box.minY + (viz.boxData.box.maxY - viz.boxData.box.minY) / 2,
+                                    viz.boxData.box.minZ + (viz.boxData.box.maxZ - viz.boxData.box.minZ) / 2
+                                );
+
+                                switch (viz.textData.textPositionEnum) {
+                                    case TextPosition.TOP_CENTER:
+                                        textRenderPos = new Vec3d(boxCenter.getX(), viz.boxData.box.maxY + 0.2, boxCenter.getZ());
+                                        break;
+                                    case TextPosition.BOTTOM_CENTER:
+                                        textRenderPos = new Vec3d(boxCenter.getX(), viz.boxData.box.minY - 0.2, boxCenter.getZ());
+                                        break;
+                                    case TextPosition.CENTER:
+                                        textRenderPos = boxCenter;
+                                        break;
+                                    case TextPosition.CUSTOM_OFFSET:
+                                        // textRenderPos is already the base position, apply offset
+                                        if (viz.textData.textOffsetVec3d) {
+                                            textRenderPos = textRenderPos.add(viz.textData.textOffsetVec3d);
+                                        }
+                                        break;
+                                }
+                            } else { // If text is standalone, use its provided position as base
+                                if (viz.textData.textPositionEnum === TextPosition.CUSTOM_OFFSET && viz.textData.textOffsetVec3d) {
+                                    textRenderPos = textRenderPos.add(viz.textData.textOffsetVec3d);
+                                }
+                            }
+
+                            // Apply custom offset if provided and not handled by enum logic
+                            if (viz.textData.textPositionEnum !== TextPosition.CUSTOM_OFFSET && viz.textData.textOffsetVec3d) {
                                 textRenderPos = textRenderPos.add(viz.textData.textOffsetVec3d);
                             }
-                            break;
+
+                            // @ts-expect-error
+                            const cameraPos = mc.gameRenderer.getCamera().getPos();
+                            return [
+                                WorldToScreen.INSTANCE.calculateScreenPos(textRenderPos, cameraPos),
+                                lines
+                            ] as [Vec3 | null, string[]];
+                        }
+                        return undefined
+                    })
+                    .filter((data) => data !== undefined && data !== null && data[0] !== undefined)
+                    .sort((a, b) => a![0]!.x() - b![0]!.x())
+                    .forEach((data, index) => {
+                        const [pos, lines] = data!
+                        drawTextWithBackground(
+                            env,
+                            lines,
+                            pos!.x(),
+                            pos!.y(),
+                            index * 1000,
+                            textColor,
+                            FontManager.INSTANCE.FONT_RENDERER,
+                            quadBuffers,
+                            lineBuffers,
+                            fontBuffers
+                        )
+                    });
+
+                // commit
+                GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT)
+                GL11.glEnable(GL11.GL_DEPTH_TEST)
+
+                RenderSystem.enableBlend()
+                RenderSystem.blendFuncSeparate(
+                    GL11.GL_SRC_ALPHA,
+                    GL11.GL_ONE_MINUS_SRC_ALPHA,
+                    GL11.GL_ONE,
+                    GL11.GL_ZERO
+                )
+
+                RenderShortcutsKt.withColor(
+                    env,
+                    new Color4b(30, 30, 30, 120),
+                    // @ts-expect-error
+                    (env_: RenderEnvironment) => {
+                        quadBuffers.draw()
                     }
-                } else { // If text is standalone, use its provided position as base
-                    if (viz.textData.textPositionEnum === TextPosition.CUSTOM_OFFSET && viz.textData.textOffsetVec3d) {
-                        textRenderPos = textRenderPos.add(viz.textData.textOffsetVec3d);
+                )
+
+                RenderShortcutsKt.withColor(
+                    env,
+                    new Color4b(255, 255, 255, 255),
+                    // @ts-expect-error
+                    (env_: RenderEnvironment) => {
+                        lineBuffers.draw()
                     }
-                }
+                )
 
-                // Apply custom offset if provided and not handled by enum logic
-                if (viz.textData.textPositionEnum !== TextPosition.CUSTOM_OFFSET && viz.textData.textOffsetVec3d) {
-                    textRenderPos = textRenderPos.add(viz.textData.textOffsetVec3d);
-                }
-
-                // This part would involve actual text rendering using LiquidBounce's API
-                // For now, just a placeholder.
-                // console.log(`Rendering text: "${text}" at ${textRenderPos.getX()}, ${textRenderPos.getY()}, ${textRenderPos.getZ()}`);
-            }
-        });
+                RenderShortcutsKt.withColor(
+                    env,
+                    textColor,
+                    // @ts-expect-error
+                    (env_: RenderEnvironment) => {
+                        fontBuffers.draw()
+                    }
+                )
+            })
     }
 
-    // TODO: refactor this to be typescript
-    public addBoxVisualization(
-        box: Box,
-        position: Vec3d,
-        durationTicks: number,
-        glow: boolean = true,
-        fillInterpolator: ColorInterpolator,
-        outlineInterpolator?: ColorInterpolator
-    ): string {
+    public addVisualization(options: AddVisualizationOptions): string {
         const id = `viz-${this.nextId++}`;
-        this.visualizations.set(id, {
+        const visualization: Visualization = {
             id,
             creationTick: this.currentTick,
-            durationTicks,
-            boxData: {
-                box,
-                position,
-                glow,
-                outlineInterpolator,
-                fillInterpolator,
-            },
-        });
+            durationTicks: options.durationTicks,
+            boxData: options.boxData ? {
+                box: options.boxData.box!, // Use non-null assertion as Partial<BoxData> makes it optional
+                position: options.boxData.position!, // Use non-null assertion
+                glow: options.boxData.glow ?? true, // Default to true
+                outlineInterpolator: options.boxData.outlineInterpolator,
+                fillInterpolator: options.boxData.fillInterpolator || defaultRainbowInterpolator,
+            } : undefined,
+            textData: options.textData ? {
+                textProvider: options.textData.textProvider!, // Use non-null assertion
+                position: options.textData.position!, // Use non-null assertion
+                textPositionEnum: options.textData.textPositionEnum ?? TextPosition.CUSTOM_OFFSET,
+                textOffsetVec3d: options.textData.textOffsetVec3d,
+            } : undefined,
+        };
+        this.visualizations.set(id, visualization);
         return id;
     }
-
-    public addTextVisualization(
-        textProvider: () => string,
-        position: Vec3d,
-        durationTicks: number,
-        textPositionEnum: TextPosition = TextPosition.CUSTOM_OFFSET,
-        textOffsetVec3d?: Vec3d
-    ): string {
-        const id = `viz-${this.nextId++}`;
-        this.visualizations.set(id, {
-            id,
-            creationTick: this.currentTick,
-            durationTicks,
-            textData: {
-                textProvider,
-                position,
-                textPositionEnum,
-                textOffsetVec3d,
-            },
-        });
-        return id;
-    }
-
-    public addBoxAndTextVisualization(
-        box: Box,
-        boxPosition: Vec3d,
-        textProvider: () => string,
-        durationTicks: number,
-        textPositionEnum: TextPosition = TextPosition.TOP_CENTER,
-        textOffsetVec3d?: Vec3d,
-        glow: boolean = true,
-        fillInterpolator?: ColorInterpolator,
-        outlineInterpolator?: ColorInterpolator,
-    ): string {
-        const id = `viz-${this.nextId++}`;
-        this.visualizations.set(id, {
-            id,
-            creationTick: this.currentTick,
-            durationTicks,
-            boxData: {
-                box,
-                position: boxPosition,
-                glow,
-                outlineInterpolator,
-                fillInterpolator,
-            },
-            textData: {
-                textProvider,
-                position: boxPosition, // Base text position is box position
-                textPositionEnum,
-                textOffsetVec3d,
-            },
-        });
-        return id;
-    }
-
     public removeVisualization(id: string): boolean {
         return this.visualizations.delete(id);
     }
