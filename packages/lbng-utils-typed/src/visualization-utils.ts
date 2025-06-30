@@ -197,7 +197,7 @@ export class VisualizationManager {
                 const cameraPos = MinecraftClient.instance.gameRenderer.getCamera().getPos();
 
                 try {
-                    [...this.visualizations.values()]
+                    const allTextViz = [...this.visualizations.values()]
                         .map((viz) => {
                             const ticksRemaining = (viz.creationTick + viz.durationTicks) - this.currentTick;
                             if (viz.textData) {
@@ -250,7 +250,9 @@ export class VisualizationManager {
                             return undefined
                         })
                         .filter((data) =>  data != undefined && data != null && data[0] != null && data[0] != undefined)
-                        .sort((a, b) => a![0]!.x() - b![0]!.x())
+                        .sort((a, b) => a![0]!.x() - b![0]!.x());
+                    
+                    allTextViz
                         .forEach((data, index) => {
                             const [pos, lines] = data!
                             drawTextWithBackground(
@@ -258,7 +260,7 @@ export class VisualizationManager {
                                 lines,
                                 pos!.x(),
                                 pos!.y(),
-                                index * 1000,
+                                index * 1000 / allTextViz.length,
                                 textColor,
                                 FontManager.INSTANCE.FONT_RENDERER,
                                 quadBuffers,
