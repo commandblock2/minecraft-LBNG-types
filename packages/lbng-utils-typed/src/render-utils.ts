@@ -52,6 +52,9 @@ export function renderBoxes(
     return dirty;
 }
 
+// @ts-expect-error
+const Float = Java.type("java.lang.Float")
+
 export function drawTextWithBackground(
     env: RenderEnvironment,
     lines: Array<string>,
@@ -67,19 +70,15 @@ export function drawTextWithBackground(
 
     const fontSize = FontManager.DEFAULT_FONT_SIZE
 
-    // @ts-expect-error
-    const scale = new java.lang.Float(1 / (fontSize * 0.15))
+    const scale = new Float(1 / (fontSize * 0.15))
 
     lines.forEach((text, index) => {
         const matrixStack = env.matrixStack
         matrixStack.push()
         matrixStack.translate(
-            // @ts-expect-error
-            new java.lang.Float(x),
-            // @ts-expect-error
-            new java.lang.Float(y + index * fontRenderer.height * .2),
-            // @ts-expect-error
-            new java.lang.Float(z)
+            new Float(x),
+            new Float(y + index * fontRenderer.height * .2),
+            new Float(z)
         )
 
         matrixStack.scale(scale, scale, 1)
@@ -88,19 +87,15 @@ export function drawTextWithBackground(
             0,
             0,
             true,
-            // @ts-expect-error
-            new java.lang.Float(0.0001),
+            new Float(0.0001),
             1
         )
 
         // Make the model view matrix center the text when rendering
         matrixStack.translate(
-            // @ts-expect-error
-            new java.lang.Float(-X * 0.5),
-            // @ts-expect-error
-            new java.lang.Float(-fontRenderer.height * .5),
-            // @ts-expect-error
-            new java.lang.Float(0)
+            new Float(-X * 0.5),
+            new Float(-fontRenderer.height * .5),
+            new Float(0)
         )
 
         fontRenderer.commit(env, fontBuffers)
