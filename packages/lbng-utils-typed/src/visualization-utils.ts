@@ -1,7 +1,7 @@
 import { Box } from "jvm-types/net/minecraft/util/math/Box";
 import { Vec3d } from "jvm-types/net/minecraft/util/math/Vec3d";
 import { Color4b } from "jvm-types/net/ccbluex/liquidbounce/render/engine/type/Color4b";
-import { drawTextWithBackground, renderBoxes } from "./render-utils";
+import { drawTextWithBackground, renderBoxes, drawLineStripFromVec3d } from "./render-utils";
 import { RenderShortcutsKt } from "jvm-types/net/ccbluex/liquidbounce/render/RenderShortcutsKt";
 import { ScriptModule } from "jvm-types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule";
 import { EventManager } from "jvm-types/net/ccbluex/liquidbounce/event/EventManager";
@@ -43,11 +43,17 @@ export interface BoxData {
     fillInterpolator: ColorInterpolator;
 }
 
+export interface LineData {
+    positions: Array<Vec3d>;
+    colorInterpolator: ColorInterpolator;
+}
+
 export interface TextData {
     textProvider: (durationTicks: number, ticksRemaining: number) => Array<string>;
     position: Vec3d; // Base world position for the text
     textPositionEnum: TextPosition;
     textOffsetVec3d?: Vec3d; // Optional custom offset
+    colorInterpolator: ColorInterpolator;
 }
 
 export interface Visualization {
@@ -56,12 +62,14 @@ export interface Visualization {
     durationTicks: number;
     boxData?: BoxData;
     textData?: TextData;
+    lineData?: LineData;
 }
 
 export interface AddVisualizationOptions {
     durationTicks: number;
     boxData?: Partial<BoxData>;
     textData?: Partial<TextData>;
+    lineData?: Partial<LineData>;
 }
 
 // --- Default Interpolation Functions ---
@@ -169,6 +177,12 @@ export class VisualizationManager {
                 }
             }
 
+            if (viz.lineData) {
+                const currentLineColor = viz.lineData.colorInterpolator(progress);
+                drawLineStripFromVec3d(matrixStack, viz.lineData.positions, currentLineColor);
+                outlinesEvent.markDirty();
+            }
+
         });
     }
 
@@ -186,10 +200,6 @@ export class VisualizationManager {
         )
 
         const fontBuffers = new FontRendererBuffers()
-        let i = 0
-
-        const textColor = Color4b.access$getGREEN$cp().alpha(180)
-
         RenderShortcutsKt.renderEnvironmentForGUI(new MatrixStack(),
             // @ts-expect-error
             (env: RenderEnvironment) => {
@@ -200,6 +210,7 @@ export class VisualizationManager {
                     const allTextViz = [...this.visualizations.values()]
                         .map((viz) => {
                             const ticksRemaining = (viz.creationTick + viz.durationTicks) - this.currentTick;
+                            const progress = 1 - (ticksRemaining / viz.durationTicks); // 0 at start, 1 at end
                             if (viz.textData) {
 
                                 const lines = viz.textData.textProvider(viz.durationTicks, ticksRemaining);
@@ -244,8 +255,9 @@ export class VisualizationManager {
                                 
                                 return [
                                     WorldToScreen.INSTANCE.calculateScreenPos(textRenderPos, cameraPos),
-                                    lines
-                                ] as [Vec3 | null, string[]];
+                                    lines,
+                                    viz.textData.colorInterpolator(progress)
+                                ] as [Vec3 | null, string[], Color4b];
                             }
                             return undefined
                         })
@@ -254,7 +266,7 @@ export class VisualizationManager {
                     
                     allTextViz
                         .forEach((data, index) => {
-                            const [pos, lines] = data!
+                            const [pos, lines, textColor] = data!
                             drawTextWithBackground(
                                 env,
                                 lines,
@@ -301,7 +313,7 @@ export class VisualizationManager {
 
                     RenderShortcutsKt.withColor(
                         env,
-                        textColor,
+                        new Color4b(255, 255, 255, 255), // Default color for font buffers if not specified
                         // @ts-expect-error
                         (env_: RenderEnvironment) => {
                             fontBuffers.draw()
@@ -329,6 +341,11 @@ export class VisualizationManager {
                 position: options.textData.position!, // Use non-null assertion
                 textPositionEnum: options.textData.textPositionEnum ?? TextPosition.CUSTOM_OFFSET,
                 textOffsetVec3d: options.textData.textOffsetVec3d,
+                colorInterpolator: options.textData.colorInterpolator || defaultRainbowInterpolator,
+            } : undefined,
+            lineData: options.lineData ? {
+                positions: options.lineData.positions!,
+                colorInterpolator: options.lineData.colorInterpolator || defaultRainbowInterpolator,
             } : undefined,
         };
         this.visualizations.set(id, visualization);

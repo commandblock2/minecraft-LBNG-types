@@ -112,3 +112,21 @@ export function drawTextWithBackground(
     }
     )
 }
+
+export function drawLineStripFromVec3d(matrixStack: MatrixStack, positions: Array<Vec3d>, color: Color4b) {
+    RenderShortcutsKt.renderEnvironmentForWorld(
+        matrixStack,
+        // @ts-expect-error
+        (environment: WorldRenderEnvironment) => {
+            RenderShortcutsKt.withColor(
+                environment,
+                color,
+                // @ts-expect-error
+                (_: RenderEnvironment) => {
+                    const vec3Positions = positions.map(it => new Vec3(it));
+                    RenderShortcutsKt.drawLineStrip(environment, vec3Positions);
+                }
+            );
+        }
+    );
+}
