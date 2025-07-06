@@ -201,7 +201,7 @@ function work(path: string, packageName: string) {
         // @ts-expect-error
         const npmPack = new NPMGen(generated, packageName,
             `${inDev ? today.format(formatter) : LiquidBounce.INSTANCE.clientVersion
-            }+${LiquidBounce.INSTANCE.clientBranch}+${LiquidBounce.INSTANCE.clientCommit}`,
+            }+${LiquidBounce.INSTANCE.clientBranch}.${LiquidBounce.INSTANCE.clientCommit}`,
             // extraFiles - add the ambient and augmentations files
             `"augmentations/**/*.d.ts", "ambient/ambient.d.ts"`,
             // extraTypesVersion - add the augmentations and ambient paths  
