@@ -20,6 +20,10 @@ import { Exception } from "jvm-types/java/lang/Exception";
 import { FilesKt } from "jvm-types/kotlin/io/FilesKt";
 import { File as JavaFile } from "jvm-types/java/io/File";
 import { LiquidBounce } from "jvm-types/net/ccbluex/liquidbounce/LiquidBounce"
+import { LocalDate } from "jvm-types/java/time/LocalDate";
+import { DateTimeFormatter } from "jvm-types/java/time/format/DateTimeFormatter";
+
+const inDev = LiquidBounce.IN_DEVELOPMENT
 
 // type: array
 /** @type any[] */
@@ -190,10 +194,14 @@ function work(path: string, packageName: string) {
             NULL
         );
 
+        const today = LocalDate.now();
+        const formatter = DateTimeFormatter.ofPattern('y.M.d');
+
         Client.displayChatMessage("writing types");
         // @ts-expect-error
-        const npmPack = new NPMGen(generated, packageName, 
-            `${LiquidBounce.INSTANCE.clientVersion}+${LiquidBounce.INSTANCE.clientCommit}`,
+        const npmPack = new NPMGen(generated, packageName,
+            `${inDev ? today.format(formatter) : LiquidBounce.INSTANCE.clientVersion
+            }+${LiquidBounce.INSTANCE.clientBranch}+${LiquidBounce.INSTANCE.clientCommit}`,
             // extraFiles - add the ambient and augmentations files
             `"augmentations/**/*.d.ts", "ambient/ambient.d.ts"`,
             // extraTypesVersion - add the augmentations and ambient paths  
@@ -316,7 +324,7 @@ declare module '../types/net/ccbluex/liquidbounce/script/bindings/features/Scrip
     }
 }
 
-const packageName = "jvm-types"
+const packageName = inDev ? "jvm-types-next" : "jvm-type"
 const path = ScriptManager.INSTANCE.root.path;
 
 // @ts-expect-error
