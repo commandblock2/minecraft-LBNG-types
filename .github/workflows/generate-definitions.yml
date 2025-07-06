@@ -63,13 +63,22 @@ jobs:
           mkdir -p generated-modules
           cp -r lbng/run/LiquidBounce/scripts/types-gen generated-modules/
 
+      - name: Find JVM Types Directory
+        id: find_jvm_types
+        run: |
+          # Finds the first directory matching jvm-types* inside generated-modules/types-gen/
+          JVM_DIR=$(ls -d generated-modules/types-gen/jvm-types* | head -n 1)
+          echo "jvm_dir=$JVM_DIR" >> $GITHUB_OUTPUT # Output the found path
+
       - name: Copy Augmentations
         run: |
-          cp -r augmentations/* ./generated-modules/types-gen/jvm-types*/augmentations
+          # Use the found directory path
+          cp -r augmentations/* ${{ steps.find_jvm_types.outputs.jvm_dir }}/augmentations
 
       - name: Install Generated Definitions
-        run: npm install file:./generated-modules/types-gen/jvm-types*/ --no-save
-        
+        run: |
+          # Use the found directory path for npm install
+          npm install file:${{ steps.find_jvm_types.outputs.jvm_dir }} --no-save        
       - name: Compile TypeScript
         run: |
           mkdir -p dist
@@ -79,7 +88,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: 'jvm-types'
-          path: generated-modules/types-gen/jvm-types*
+          path: ${{ steps.find_jvm_types.outputs.jvm_dir }}
           
       - name: Upload Compiled Scripts
         uses: actions/upload-artifact@v4
