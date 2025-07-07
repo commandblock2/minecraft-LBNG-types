@@ -243,30 +243,38 @@ ${globalEntries
                 .filter((entry) => entry[1] != undefined)
                 .filter((entry) => !(entry[1] instanceof Class))
                 .filter((entry) => entry[1].class != undefined)
-                .map((entry) => {
-                    // Preserve specific exports unchanged
-                    if (entry[0] === "ParameterValidator" || entry[0] === "UnsafeThread") {
-                        return `    export const ${entry[0]}: ${getName(entry[1].class)};`;
-                    }
-                    // Use new pattern for others
-                    return `    export const ${entry[0]}: typeof ${getName(entry[1].class)}_;`;
-                })
+                .map((entry) => `    export const ${entry[0]}: ${getName(entry[1].class)};`)
                 .join("\n\n")}
 
-${globalEntries
-                .filter((entry) => entry[1] != undefined)
-                .filter((entry) => entry[1] instanceof Class)
-                .map((entry) => {
-                    // Preserve specific exports unchanged
-                    if (entry[0] === "ParameterValidator" || entry[0] === "UnsafeThread") {
-                        return `    export const ${entry[0]}: ${getName(entry[1])};`;
+${javaClasses
+                .map((clazz) => {
+                    // Check if this class is exported as a constructor (appears in globalEntries as Class)
+                    const isExportedAsClass = globalEntries.some(([name, value]) => 
+                        value instanceof Class && value === clazz
+                    );
+                    
+                    if (isExportedAsClass) {
+                        const exportName = globalEntries.find(([name, value]) => 
+                            value instanceof Class && value === clazz
+                        )?.[0];
+                        
+                        // Determine if it's a concrete class or interface
+                        // You might need to adjust this logic based on how you distinguish them
+                        const isInterface = clazz.isInterface?.() || false; // Adjust this condition as needed
+                        
+                        if (isInterface) {
+                            return `    export const ${exportName}: ${getName(clazz)}_;`;
+                        } else {
+                            return `    export const ${exportName}: typeof ${getName(clazz)}_;`;
+                        }
                     }
-                    // Use new pattern for others
-                    return `    export const ${entry[0]}: typeof ${getName(entry[1])}_;`;
+                    return null;
                 })
+                .filter((entry) => entry !== null)
                 .join("\n\n")}
 
 }
+`
 
         const importsForScriptEventPatch = `
 // imports for
