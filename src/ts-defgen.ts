@@ -208,7 +208,7 @@ function work(path: string, packageName: string) {
             `"./augmentations/*", "ambient/ambient.d.ts"`,
             // otherExtras - add the types field
             `"types": "ambient/ambient.d.ts"`,
-            {
+            `{
                 ">=4.0": {
                     "jvm-types": [
                         "./types/*",
@@ -216,7 +216,7 @@ function work(path: string, packageName: string) {
                         "ambient/ambient.d.ts"
                     ]
                 }
-            }
+            }`
         );
 
         npmPack.writePackageTo(
