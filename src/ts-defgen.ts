@@ -243,7 +243,7 @@ ${globalEntries
                 .filter((entry) => entry[1] != undefined)
                 .filter((entry) => !(entry[1] instanceof Class))
                 .filter((entry) => entry[1].class != undefined)
-                .map((entry) => `    export const ${entry[0]}: ${getName(entry[1].class)};`)
+                .map((entry) => `    export const ${entry[0]}: ${getName(entry[1].class)}_;`)
                 .join("\n\n")}
 
 ${javaClasses
@@ -350,7 +350,7 @@ declare module '../types/net/ccbluex/liquidbounce/script/bindings/features/Scrip
     }
 }
 
-const packageName = inDev ? "jvm-types-next" : "jvm-type"
+const packageName = "jvm-types"
 const path = ScriptManager.INSTANCE.root.path;
 
 // @ts-expect-error
