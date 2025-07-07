@@ -3,16 +3,16 @@ import { File } from "jvm-types/java/io/File";
 import { URL } from "jvm-types/java/net/URL";
 import { Thread } from "jvm-types/java/lang/Thread";
 import { Paths } from "jvm-types/java/nio/file/Paths";
-// @ts-expect-error
-import { HashMap } from "jvm-types/java/util/HashMap";
-// @ts-expect-error
-import { ArrayList } from "jvm-types/java/util/ArrayList";
+
+// import { HashMap } from "jvm-types/java/util/HashMap";
+
+// import { ArrayList } from "jvm-types/java/util/ArrayList";
 import { JvmClassMappingKt } from "jvm-types/kotlin/jvm/JvmClassMappingKt";
 import { Class } from "jvm-types/java/lang/Class";
 import { ScriptModule } from "jvm-types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule";
 import { Object as JavaObject } from "jvm-types/java/lang/Object";
-// @ts-expect-error
-import { Map as JavaMap } from "jvm-types/java/util/Map";
+
+// import { Map as JavaMap } from "jvm-types/java/util/Map";
 import { Throwable } from "jvm-types/java/lang/Throwable";
 import { ClassPath } from "jvm-types/com/google/common/reflect/ClassPath";
 import { ScriptManager } from "jvm-types/net/ccbluex/liquidbounce/script/ScriptManager";
@@ -232,7 +232,7 @@ function work(path: string, packageName: string) {
 import "../augmentations/index.d.ts"
 ${javaClasses
                 .map((clazz) => {
-                    return `import { ${getName(clazz)} } from "../types/${clazz.name.replaceAll(".", "/")}";`;
+                    return `import { ${getName(clazz)} as ${getName(clazz)}_ } from "../types/${clazz.name.replaceAll(".", "/")}";`;
                 })
                 .join("\n")}
 declare global {
@@ -243,21 +243,30 @@ ${globalEntries
                 .filter((entry) => entry[1] != undefined)
                 .filter((entry) => !(entry[1] instanceof Class))
                 .filter((entry) => entry[1].class != undefined)
-                .map((entry) => `    export const ${entry[0]}: ${getName(entry[1].class)};`)
+                .map((entry) => {
+                    // Preserve specific exports unchanged
+                    if (entry[0] === "ParameterValidator" || entry[0] === "UnsafeThread") {
+                        return `    export const ${entry[0]}: ${getName(entry[1].class)};`;
+                    }
+                    // Use new pattern for others
+                    return `    export const ${entry[0]}: typeof ${getName(entry[1].class)}_;`;
+                })
                 .join("\n\n")}
 
 ${globalEntries
                 .filter((entry) => entry[1] != undefined)
                 .filter((entry) => entry[1] instanceof Class)
-                .map(
-                    (entry) => `    export { ${entry[0]} };`
-                )
+                .map((entry) => {
+                    // Preserve specific exports unchanged
+                    if (entry[0] === "ParameterValidator" || entry[0] === "UnsafeThread") {
+                        return `    export const ${entry[0]}: ${getName(entry[1])};`;
+                    }
+                    // Use new pattern for others
+                    return `    export const ${entry[0]}: typeof ${getName(entry[1])}_;`;
+                })
                 .join("\n\n")}
 
 }
-
-export { };
-`;
 
         const importsForScriptEventPatch = `
 // imports for
