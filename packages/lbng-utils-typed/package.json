@@ -5,12 +5,16 @@
   "author": "commandblock2",
   "license": "GPL-3.0",
   "dependencies": {
-    "jvm-types": "^0.30.1"
+    "jvm-types": "^2025.7.8"
   },
   "typesVersions": {
     "*": {
-      "*": ["dist/*"],
-      "dist/*": ["dist/*"]
+      "*": [
+        "dist/*"
+      ],
+      "dist/*": [
+        "dist/*"
+      ]
     }
   },
   "files": [
