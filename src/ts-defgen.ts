@@ -207,7 +207,8 @@ function work(path: string, packageName: string) {
             // extraTypesVersion - add the augmentations and ambient paths  
             `"./augmentations/*", "ambient/ambient.d.ts"`,
             // otherExtras - add the types field
-            `"types": "ambient/ambient.d.ts"`
+            `"types": "ambient/ambient.d.ts"`,
+            null
         );
 
         npmPack.writePackageTo(
