@@ -76,7 +76,7 @@ script.registerModule({
 
     })
 
-    mod.on("worldrender", event => {
+    mod.on("drawoutlines", event => {
 
         if (!mod.settings.draw.getValue())
             return
