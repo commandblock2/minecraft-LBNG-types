@@ -25,9 +25,8 @@ import { DateTimeFormatter } from "jvm-types/java/time/format/DateTimeFormatter"
 
 const inDev = LiquidBounce.IN_DEVELOPMENT
 
-// type: array
-/** @type any[] */
-const globalEntries = Object.entries(globalThis);
+// @ts-expect-error
+const globalEntries: any[] = Object.entries(globalThis);
 
 // Function to create a URLClassLoader from a JAR path
 function createClassLoaderFromJar(jarPath: string): URLClassLoader {
