@@ -16,6 +16,9 @@ import { VertexFormat$DrawMode } from "jvm-types/net/minecraft/client/render/Ver
 import { VertexInputType$Pos } from "jvm-types/net/ccbluex/liquidbounce/render/VertexInputType$Pos"
 import { GL11 } from "jvm-types/org/lwjgl/opengl/GL11"
 import { RenderSystem } from "jvm-types/com/mojang/blaze3d/systems/RenderSystem"
+import { Vector3f } from "jvm-types/org/joml/Vector3f"
+import { Matrix4f } from "jvm-types/org/joml/Matrix4f"
+import { MinecraftVectorExtensionsKt } from "jvm-types/net/ccbluex/liquidbounce/utils/math/MinecraftVectorExtensionsKt"
 
 export function renderBoxes(
     boxesWithPosition: Array<[Box, Vec3d]>,
@@ -52,8 +55,6 @@ export function renderBoxes(
     return dirty;
 }
 
-// @ts-expect-error
-const Float = Java.type("java.lang.Float")
 
 export function drawTextWithBackground(
     env: RenderEnvironment,
@@ -70,15 +71,15 @@ export function drawTextWithBackground(
 
     const fontSize = FontManager.DEFAULT_FONT_SIZE
 
-    const scale = new Float(1 / (fontSize * 0.15))
+    const scale = Primitives.float(1 / (fontSize * 0.15))
 
     lines.forEach((text, index) => {
         const matrixStack = env.matrixStack
         matrixStack.push()
         matrixStack.translate(
-            new Float(x),
-            new Float(y + index * fontRenderer.height * .2),
-            new Float(z)
+            Primitives.float(x),
+            Primitives.float(y + index * fontRenderer.height * .2),
+            Primitives.float(z)
         )
 
         matrixStack.scale(scale, scale, 1)
@@ -87,15 +88,15 @@ export function drawTextWithBackground(
             0,
             0,
             true,
-            new Float(0.0001),
+            Primitives.float(0.0001),
             1
         )
 
         // Make the model view matrix center the text when rendering
         matrixStack.translate(
-            new Float(-X * 0.5),
-            new Float(-fontRenderer.height * .5),
-            new Float(0)
+            Primitives.float(-X * 0.5),
+            Primitives.float(-fontRenderer.height * .5),
+            Primitives.float(0)
         )
 
         fontRenderer.commit(env, fontBuffers)
@@ -122,11 +123,36 @@ export function drawLineStripFromVec3d(matrixStack: MatrixStack, positions: Arra
                 environment,
                 color,
                 // @ts-expect-error
-                (_: RenderEnvironment) => {
-                    const vec3Positions = positions.map(it => new Vec3(it));
+                (env: RenderEnvironment) => {
+                    const vec3Positions = positions.map(it => MinecraftVectorExtensionsKt.toVec3(env.relativeToCamera(it)));
                     RenderShortcutsKt.drawLineStrip(environment, vec3Positions);
                 }
             );
         }
     );
+}
+
+const cacheMatrix = new Matrix4f()
+const cacheVec3f = new Vector3f()
+
+export function calculateScreenPosExtended(
+    positionMatrix: Matrix4f,
+    projectionMatrix: Matrix4f,
+    pos: Vec3d,
+    cameraPos: Vec3d = mc.gameRenderer.camera.pos) {
+    const relativePos = pos.subtract(cameraPos)
+
+    const transformedPos = cacheVec3f.set(relativePos.getX(), relativePos.getY(), relativePos.getZ())
+        .mulProject(cacheMatrix.set(projectionMatrix).mul(positionMatrix))
+
+    const scaleFactor = mc.window.scaleFactor
+    const guiScaleMul = 0.5 / scaleFactor
+
+    const screenPos = transformedPos.mul(1.0, -1.0, 1.0).add(1.0, 1.0, 0.0)
+        .mul(
+            Primitives.float(guiScaleMul * mc.framebuffer.viewportWidth),
+            Primitives.float(guiScaleMul * mc.framebuffer.viewportHeight),
+            1.0)
+
+    return new Vec3(screenPos.x, screenPos.y, transformedPos.z)
 }

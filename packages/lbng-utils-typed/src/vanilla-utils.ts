@@ -13,15 +13,13 @@ import { ClientPlayerInteractionManager } from "jvm-types/net/minecraft/client/n
 import { ClientWorld } from "jvm-types/net/minecraft/client/world/ClientWorld";
 import { BlockHitResult } from "jvm-types/net/minecraft/util/hit/BlockHitResult";
 
-export function teleportTraverse(posList: Array<Vec3d>) {
-    const mc = MinecraftClient.getInstance()
+export function teleportTraversePre120(posList: Array<Vec3d>) {
     for (const pos of posList) {
         mc.player?.networkHandler.sendPacket(new PlayerMoveC2SPacket$PositionAndOnGround(pos.x, pos.y, pos.z, true, false));
     }
 }
 
 export function interactPlaceMidAir(pos: Vec3d) {
-    const mc = MinecraftClient.getInstance()
     const blockPos = new BlockPos(pos.x, pos.y, pos.z);
     const hitResult = new BlockHitResult(
         pos, // hit position

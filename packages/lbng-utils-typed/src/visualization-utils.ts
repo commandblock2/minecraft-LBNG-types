@@ -23,6 +23,7 @@ import { GL11 } from "jvm-types/org/lwjgl/opengl/GL11";
 import { RenderSystem } from "jvm-types/com/mojang/blaze3d/systems/RenderSystem";
 import { Vec3 } from "jvm-types/net/ccbluex/liquidbounce/render/engine/type/Vec3";
 import { MinecraftClient } from "jvm-types/net/minecraft/client/MinecraftClient";
+import { WorldRenderEvent } from "jvm-types/net/ccbluex/liquidbounce/event/events/WorldRenderEvent";
 
 // --- Enums and Interfaces ---
 
@@ -126,7 +127,7 @@ export class VisualizationManager {
     constructor(scriptModule: ScriptModule) {
         // @ts-expect-error
         EventManager.INSTANCE.registerEventHook(DrawOutlinesEvent.class, new EventHook(scriptModule, (event: DrawOutlinesEvent) => {
-            this.onWorldRender(event)
+            this.onOutlineRender(event)
         }, Priority.NORMAL.ordinal()))
 
         // @ts-expect-error
@@ -138,6 +139,21 @@ export class VisualizationManager {
         EventManager.INSTANCE.registerEventHook(OverlayRenderEvent.class, new EventHook(scriptModule, (event: OverlayRenderEvent) => {
             this.onGUIRender(event)
         }, Priority.NORMAL.ordinal()))
+
+        // @ts-expect-error
+        EventManager.INSTANCE.registerEventHook(WorldRenderEvent.class, new EventHook(scriptModule, (event: WorldRenderEvent) => {
+            this.onWorldRender(event)
+        }, Priority.NORMAL.ordinal()))
+    }
+    private onWorldRender(event: WorldRenderEvent) {
+        this.visualizations.forEach(viz => {
+            if (viz.lineData) {
+                const ticksRemaining = (viz.creationTick + viz.durationTicks) - this.currentTick;
+                const progress = 1 - (ticksRemaining / viz.durationTicks); // 0 at start, 1 at end
+                const currentLineColor = viz.lineData.colorInterpolator(progress);
+                drawLineStripFromVec3d(event.matrixStack, viz.lineData.positions, currentLineColor);
+            }
+        })
     }
 
     public onTick(): void {
@@ -155,7 +171,7 @@ export class VisualizationManager {
         expiredIds.forEach(id => this.visualizations.delete(id));
     }
 
-    public onWorldRender(outlinesEvent: DrawOutlinesEvent): void {
+    public onOutlineRender(outlinesEvent: DrawOutlinesEvent): void {
         const matrixStack = outlinesEvent.matrixStack
         this.visualizations.forEach(viz => {
             const ticksRemaining = (viz.creationTick + viz.durationTicks) - this.currentTick;
@@ -175,12 +191,6 @@ export class VisualizationManager {
                     ))
                         outlinesEvent.markDirty();
                 }
-            }
-
-            if (viz.lineData) {
-                const currentLineColor = viz.lineData.colorInterpolator(progress);
-                drawLineStripFromVec3d(matrixStack, viz.lineData.positions, currentLineColor);
-                outlinesEvent.markDirty();
             }
 
         });
@@ -252,7 +262,7 @@ export class VisualizationManager {
                                     textRenderPos = textRenderPos.add(viz.textData.textOffsetVec3d);
                                 }
 
-                                
+
                                 return [
                                     WorldToScreen.INSTANCE.calculateScreenPos(textRenderPos, cameraPos),
                                     lines,
@@ -261,9 +271,9 @@ export class VisualizationManager {
                             }
                             return undefined
                         })
-                        .filter((data) =>  data != undefined && data != null && data[0] != null && data[0] != undefined)
+                        .filter((data) => data != undefined && data != null && data[0] != null && data[0] != undefined)
                         .sort((a, b) => a![0]!.x() - b![0]!.x());
-                    
+
                     allTextViz
                         .forEach((data, index) => {
                             const [pos, lines, textColor] = data!
