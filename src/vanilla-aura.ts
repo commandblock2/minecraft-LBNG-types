@@ -76,7 +76,7 @@ script.registerModule({
         entityList = entityList.slice(originallyAvailable, entityList.length)
         if (entityList.length == 0) {
             const list: Array<LivingEntity> = []
-            mc.world.entityList.forEach((entity) => {
+            mc.world.getEntities().forEach((entity) => {
                 if (entity instanceof LivingEntity)
                     list.push(entity);
             })
