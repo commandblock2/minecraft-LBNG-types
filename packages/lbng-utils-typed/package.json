@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Utils for scripting LBNG(graaljs), of my own taste instead of ccbluex's, written in typescript.",
   "author": "commandblock2",
-  "license": "GPL-3.0",
+  "license": "GPL-3.0-only",
   "dependencies": {
     "jvm-types": "^2025.7.8"
   },
