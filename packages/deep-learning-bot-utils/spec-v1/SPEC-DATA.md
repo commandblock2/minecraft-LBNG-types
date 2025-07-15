@@ -31,12 +31,14 @@
     *   **Previous Player Pose:** Categorical state at past tick.
     *   **Previous Fall Distance:**.
 
-**Local Environment Scan (Relative):**
+**Local Environment Scan (Collision Box List):**
 
-*   An collection of nearby environmental elements (e.g., blocks) within a defined spatial radius. For each element:
-    *   **Relative Position:** Offset from the player's immediate block location (`dX`, `dY`, `dZ`).
-    *   **Element Identifier:** A unique string label for the element type (e.g., `minecraft:stone`, `minecraft:water`).
-    *   **Traversability Data:** A categorization indicating how the player can interact with the element:
+*   A collection of collision boxes from nearby environmental elements within a defined spatial radius, plus dynamic areas of interest. Each collision box contains:
+    *   **Bounding Box Coordinates:** The precise geometric bounds (`minX`, `minY`, `minZ`, `maxX`, `maxY`, `maxZ`) of the collision box, normalized relative to the player position.
+    *   **Relative Position:** Center point of the collision box relative to the player (`centerX`, `centerY`, `centerZ`).
+    *   **Box Dimensions:** Width, height, and depth of the collision box (`width`, `height`, `depth`).
+    *   **Element Identifier:** A unique string label for the element type that owns this collision box (e.g., `minecraft:stone`, `minecraft:water`, `minecraft:boat`).
+    *   **Traversability Data:** A categorization indicating how the player can interact with this collision box:
         *   `SOLID_WALKABLE`
         *   `FLUID`
         *   `OBSTRUCTION`
@@ -44,8 +46,11 @@
         *   `LIQUID_PLACEABLE`
         *   `PLACEABLE_BLOCK`
         *   `OTHER`
-    *   **Bounding Box Data:** The geometric bounds (`minX`, `minY`, `minZ`, `maxX`, `maxY`, `maxZ`) of the element.
-    *   **Block Interest Flag (Output from separate NN / Mechanism):** A boolean indicating if this block is identified as a point of interest for more detailed scanning by the bot (this flag helps during data collection and potentially guides external systems, but the NN will *output* areas of interest).
+    *   **Element State Properties:** Specific configuration data for the element (e.g., directionality of stairs, state of a farmland block, door open/closed).
+    *   **Area Source Type:** Categorical indicator of how this collision box was included in the scan:
+        *   `FIXED_RADIUS` - Collision box within fixed scanning radius around player
+        *   `DYNAMIC_INTEREST` - Collision box included due to area of interest output
+    *   **Box Validity:** Boolean indicating if this collision box slot contains valid data (used for padding in fixed-size arrays).
 
 **Simplified Inventory Snapshot:**
 
@@ -55,6 +60,18 @@
 *   **Key Utility Indicators:** Boolean flags for critical items relevant to traversal:
     *   `hasWaterBucket`
     *   `hasPlaceableBlocks`
+
+**Baritone Reference Data (Training Phase Only):**
+
+*   **Current Target Path:** A sequence of waypoints representing Baritone's computed optimal path to the current goal.
+    *   **Path Waypoints:** Array of 3D coordinates (`X`, `Y`, `Z`) representing the sequence of blocks to traverse.
+    *   **Path Length:** Total number of waypoints in the current path.
+    *   **Next Waypoint Index:** Index of the next waypoint the bot should move toward.
+    *   **Estimated Completion Time:** Baritone's estimate of ticks required to complete the path.
+*   **Path Metadata:**
+    *   **Path Computation Tick:** The game tick when this path was computed by Baritone.
+    *   **Goal Coordinates:** The target destination (`GoalX`, `GoalY`, `GoalZ`) for this path.
+    *   **Path Validity:** Boolean indicating if the path is still valid (no environmental changes detected).
 
 ---
 
@@ -80,6 +97,7 @@
 *   **Movement:** `MOVE` (with directional components), `JUMP`, `SNEAK`, `SPRINT`.
 *   **Interaction:** `LOOK` (with direction changes), `USE_ITEM` (specifying item/slot and target), `PLACE_BLOCK` (specifying item/slot, target position, and face).
 *   **Combat:** `ATTACK_ENTITY` (specifying target entity and arm swing), `SWAP_OFFHAND` (to switch items between hands).
+*   **Path of Interest Generation:** `GENERATE_AREA_OF_INTEREST` (specifying a sequence of 3D coordinates that define additional areas for detailed environmental scanning beyond the fixed radius).
 
 ---
 

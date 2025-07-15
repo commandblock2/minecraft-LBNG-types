@@ -23,13 +23,23 @@ The input to the neural network for each game tick will consist of the current e
             *   `Target Coordinates`: `[GoalX, GoalY, GoalZ]` (normalized)
             *   `Target Entity Info`: `[TargetEntity_Type_OneHot, TargetEntity_Health_Normalized, TargetEntity_Distance_Normalized]` (if the goal is an enemy entity)
 
-2.  **Local Environment Scan (3D Voxel Grid Tensor):**
-    *   **Shape:** `(GridSizeX, GridSizeY, GridSizeZ, Channels)` (e.g., 16x16x16 voxels, 10-20 channels).
-    *   **Channels per Voxel (Concatenated Features):**
-        *   `Element Identifier`: One-hot encoding of block type (potentially learned embeddings for large vocabularies).
-        *   `Traversability Data`: One-hot encoding (e.g., `SOLID_WALKABLE`, `FLUID`).
-        *   `IsOccupiedByBoundingBox`: Binary flag.
-        *   `Element State Properties`: One-hot or numerical features for block states (e.g., `IsDoorOpen`).
+2.  **Local Environment Scan (Collision Box List):**
+    *   **Shape:** `(MAX_COLLISION_BOXES, BOX_FEATURE_SIZE)` (e.g., up to 512 boxes, 16-20 features per box).
+    *   **Composition:** Combined list of collision boxes from fixed radius scan + dynamic area of interest
+    *   **Per-Box Features (Concatenated Vector):**
+        *   `Bounding Box Coordinates`: `[minX, minY, minZ, maxX, maxY, maxZ]` (normalized relative to player)
+        *   `Relative Position`: `[relativeX, relativeY, relativeZ]` (box center relative to player)
+        *   `Box Dimensions`: `[width, height, depth]` (derived from min/max coordinates)
+        *   `Element Identifier`: Learned embedding of block/entity type
+        *   `Traversability Data`: One-hot encoding (e.g., `SOLID_WALKABLE`, `FLUID`, `OBSTRUCTION`)
+        *   `Element State Properties`: Numerical features for block states (e.g., `IsDoorOpen`, `StairDirection`)
+        *   `Area Source Type`: One-hot encoding (`FIXED_RADIUS`, `DYNAMIC_INTEREST`)
+        *   `Box Validity Mask`: Binary flag indicating if this slot contains a valid collision box (for padding)
+    *   **Neural Network Processing Notes:**
+        *   Use attention mechanisms or set-based networks (e.g., Deep Sets, Set Transformer) to handle variable-length collision box lists
+        *   The `Box Validity Mask` enables proper masking for padded entries in fixed-size tensors
+        *   Consider spatial attention based on `Relative Position` to focus on nearby collision boxes
+        *   Learned embeddings for `Element Identifier` can capture semantic relationships between block types
 
 3.  **Inventory Snapshot (Numerical Vector + Categorical/Embeddings):**
     *   **Hotbar Slots (Fixed-Size List of Vectors):** For each of 9 slots:
@@ -92,8 +102,10 @@ The neural network will generate multiple outputs in parallel, representing the 
         *   *If actively attacking:*
         *   `Target Entity Index for Attack`: `[OneHot_0_N]` (softmax over the N targeted entities from input)
 
-5.  **Special Interest Output Branch (Probabilities):**
-    *   `Areas of Interest for Detailed Scan`: A `(SmallGridX, SmallGridY, SmallGridZ)` tensor, where each value indicates a probability or score of that block being "interesting". This output would typically be used by an external module to trigger more detailed data collection or camera movement, rather than directly controlling in-game actions. It helps in training the bot to intelligently explore and identify relevant features in the environment.
+5.  **Special Interest Output Branch (Path of Interest Generation):**
+    *   `Areas of Interest for Detailed Scan`: A `(SmallGridX, SmallGridY, SmallGridZ)` tensor, where each value indicates a probability or score of that block being "interesting". This output determines which additional collision boxes (beyond the fixed radius) will be fed into the neural network on the next tick.
+    *   `Path Waypoints`: A sequence of 3D coordinates `[(X1,Y1,Z1), (X2,Y2,Z2), ...]` representing the bot's predicted optimal path. During training, this is compared against Baritone's pathfinding output as ground truth.
+    *   `Path Confidence`: A scalar value indicating the bot's confidence in its generated path, used for training stability and exploration strategies.
 
 6.  **Network Control Branch (Probabilities & Conditional Parameters):**
     *   This branch controls actions related to manipulating network packets. Note that implementing these actions requires an external mechanism (e.g., a proxy or custom network stack) that the bot's decisions interface with.
