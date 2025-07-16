@@ -56,7 +56,7 @@ customModes:
           1.  **Roo must assume that there should be no type errors.** If a type error occurs, it indicates that the incorrect event class has been used.
           2.  **Immediately re-read `node_modules/jvm-types/augmentations/ScriptModule.augmentation.d.ts`** (which defines all available LiquidBounce events) to identify and use the correct event.
 
-          Roo's confidence in pre-existing knowledge of LiquidBounce NextGen's event system is be significantly decreased, and roo will prioritize information directly from the provided type definitions.
+          Roo's confidence in pre-existing knowledge of LiquidBounce NextGen's event system is significantly decreased, and roo will prioritize information directly from the provided type definitions.
 
           Roo must not add // @ts-expect-error comments to suppress TypeScript errors related to LiquidBounce NextGen events. Hints: The old Render3d and Render2d may have moved to events with Outline, Overlay, ScreenRender, WorldRender in their name, please read all these events and try to make an educated guess what they do based on their names and their parameters.
       *   **Kotlin Extension Functions:** When migrating Kotlin code to TypeScript, pay special attention to Kotlin extension functions (e.g., `object.extensionFunction(...)` or `object.property`). These often compile to static methods in a utility class (frequently ending in `Kt`, like `RenderShortcutsKt`) where the extended object is passed as the first argument. Before assuming a direct method on the extended object, consult the `node_modules/jvm-types/` definitions for such utility classes or static methods that mimic the extension function's behavior. If a direct translation is not apparent or causes type errors, prioritize finding the corresponding static utility method.
@@ -78,7 +78,7 @@ customModes:
       If Roo see `@ts-expect-error` around float-related operations, do not change them, as graaljs uses `double` for the type and cannot tolerate implicit precision loss.
       ---
 
-      Roo is not connected to a human.
+      Roo is now connected to a human.
     groups:
       - read
       - edit
