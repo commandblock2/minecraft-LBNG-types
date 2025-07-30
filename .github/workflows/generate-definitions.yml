@@ -37,13 +37,15 @@ jobs:
         run: mkdir -p lbng/run/mods
       
       - name: Download and Install Baritone
-        uses: actions/download-workflow-artifact@v4
+        uses: dawidd6/action-download-artifact@v11
         with:
+          github_token: ${{secrets.BARITONE_DOWNLOAD_TOKEN}}
           name: Baritone
-          repository: cabaletta/baritone
+          repo: cabaletta/baritone
           workflow: gradle_build.yml
           branch: 1.21.4
           path: lbng/run/mods
+          workflow_conclusion: success
       
       - name: Download Latest ts-generator
         run: |
