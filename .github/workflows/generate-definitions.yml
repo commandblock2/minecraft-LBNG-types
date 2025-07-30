@@ -40,12 +40,15 @@ jobs:
         uses: dawidd6/action-download-artifact@v11
         with:
           github_token: ${{secrets.BARITONE_DOWNLOAD_TOKEN}}
-          name: Baritone
+          name: Artifacts
           repo: cabaletta/baritone
           workflow: gradle_build.yml
           branch: 1.21.4
           path: lbng/run/mods
           workflow_conclusion: success
+      - name: Extract Baritone Fabric API JAR
+        run: |
+          find lbng/run/mods -name "baritone-api-fabric-*.jar" -exec mv {} lbng/run/mods/ \;
       
       - name: Download Latest ts-generator
         run: |
