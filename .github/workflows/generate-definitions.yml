@@ -32,7 +32,23 @@ jobs:
         run: |
           git clone https://github.com/commandblock2/LiquidBounce.git lbng
           cd lbng
-          git checkout 9888c42aa793bdac38767839443de934e509e103  
+          git checkout 9888c42aa793bdac38767839443de934e509e103
+      - name: Create Mods Directory
+        run: mkdir -p lbng/run/mods
+      
+      - name: Download and Install Baritone
+        uses: dawidd6/action-download-artifact@v11
+        with:
+          github_token: ${{secrets.BARITONE_DOWNLOAD_TOKEN}}
+          name: Artifacts
+          repo: cabaletta/baritone
+          workflow: gradle_build.yml
+          branch: 1.21.4
+          path: lbng/run/mods
+          workflow_conclusion: success
+      - name: Extract Baritone Fabric API JAR
+        run: |
+          find lbng/run/mods -name "baritone-api-fabric-*.jar" -exec mv {} lbng/run/mods/ \;
       
       - name: Download Latest ts-generator
         run: |

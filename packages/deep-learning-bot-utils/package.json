@@ -1,0 +1,7 @@
+{
+  "name": "deep-learning-bot-utils",
+  "version": "1.0.0",
+  "description": "Utils for making a deep learning bot, prioritizing pathfinding and traversability, then expanding to inventory and game context.",
+  "author": "commandblock2",
+  "license": "GPL-3.0-only"
+}
