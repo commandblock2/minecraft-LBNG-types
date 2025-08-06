@@ -5,9 +5,19 @@
             "name": "Attach",
             "type": "node",
             "request": "attach",
-            "debugServer": 4242,
+            "debugServer": 4243,
             "restart": true,
             "sourceMaps": true      
+        },
+        {
+            "name": "Attach by cdp (not recommended)",
+            "type": "node",
+            "request": "attach",
+            "port": 4242, // Default inspect port
+            "address": "localhost",
+            "restart": true,
+            "sourceMaps": true
         }
+
     ]
 }
