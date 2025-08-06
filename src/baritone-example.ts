@@ -1,17 +1,19 @@
 import { BaritoneAPI } from "jvm-types/baritone/api/BaritoneAPI"
 import { GoalXZ } from "jvm-types/baritone/api/pathing/goals/GoalXZ"
-import { CalculationContext } from "jvm-types/baritone/pathing/movement/CalculationContext"
-import { Favoring } from "jvm-types/baritone/utils/pathing/Favoring"
 import { BetterBlockPos } from "jvm-types/baritone/api/utils/BetterBlockPos"
 import { IPath } from "jvm-types/baritone/api/pathing/calc/IPath"
-import { VisualizationManager } from "lbng-utils-typed/dist/visualization-utils"
 import { PathCalculationResult$Type } from "jvm-types/baritone/api/utils/PathCalculationResult$Type"
+
+import { VisualizationManager } from "lbng-utils-typed/dist/visualization-utils"
 
 // note: this import is not from baritone-api jar
 // it is only presented in the baritone-unoptimized jar
 // as the `AStarPathFinder` class is possibly obfuscated in the baritone-standalone jar
 // so you will have to install the baritone-unoptimized jar to use this import
 import { AStarPathFinder } from "jvm-types/baritone/pathing/calc/AStarPathFinder"
+import { Favoring } from "jvm-types/baritone/utils/pathing/Favoring"
+import { CalculationContext } from "jvm-types/baritone/pathing/movement/CalculationContext"
+
 
 
 const script = registerScript.apply({
@@ -73,7 +75,7 @@ script.registerModule({
         // Create calculation context for threaded use
         const context = new CalculationContext(baritone, true);
 
-        // Create favoring (empty favoring for no preferences)
+        // Create favoring (empty favoring at first run for no preferences)
         const favoring = new Favoring(baritone.getPlayerContext(), previousPath as unknown as IPath, context);
 
         // Create goal using settings
