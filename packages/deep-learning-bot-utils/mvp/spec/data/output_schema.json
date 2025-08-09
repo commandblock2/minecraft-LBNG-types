@@ -1,0 +1,62 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Baritone Action Output Schema",
+    "description": "Schema defining the structure of Baritone's intended action output (Y for training).",
+    "type": "object",
+    "properties": {
+        "move_direction": {
+            "type": "string",
+            "description": "The primary direction of planar movement.",
+            "enum": [
+                "NONE",
+                "FORWARD",
+                "BACKWARD",
+                "LEFT",
+                "RIGHT",
+                "FORWARD_LEFT",
+                "FORWARD_RIGHT",
+                "BACKWARD_LEFT",
+                "BACKWARD_RIGHT"
+            ]
+        },
+        "look_change": {
+            "type": "object",
+            "description": "Relative change in look direction from the current look_direction.",
+            "properties": {
+                "yaw": {
+                    "type": "number",
+                    "description": "Change in yaw (horizontal rotation) in degrees."
+                },
+                "pitch": {
+                    "type": "number",
+                    "description": "Change in pitch (vertical rotation) in degrees."
+                }
+            },
+            "required": [
+                "yaw",
+                "pitch"
+            ],
+            "additionalProperties": false
+        },
+        "jump": {
+            "type": "boolean",
+            "description": "Whether the jump action is being performed."
+        },
+        "sneak": {
+            "type": "boolean",
+            "description": "Whether the sneak (crouch) action is being toggled/held."
+        },
+        "sprint": {
+            "type": "boolean",
+            "description": "Whether the sprint action is being toggled/held."
+        }
+    },
+    "required": [
+        "move_direction",
+        "look_change",
+        "jump",
+        "sneak",
+        "sprint"
+    ],
+    "additionalProperties": false
+}
