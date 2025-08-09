@@ -65,40 +65,5 @@ script.registerModule({
             null // No action when reached
         );
     });
-
-    script.registerCommand({
-        name: "setrot",
-        aliases: ["sr"],
-        parameters: [
-            {
-                name: "yaw",
-                required: true,
-                // No direct float validator, remove for now
-            },
-            {
-                name: "pitch",
-                required: true,
-                // No direct float validator, remove for now
-            }
-        ],
-        onExecute(yaw: number, pitch: number) {
-            if (!mc.player) {
-                Client.displayChatMessage("§cYou are not in a game.");
-                return;
-            }
-    
-            const rotation = new Rotation(yaw, pitch, true);
-    
-            RotationManager.INSTANCE.setRotationTarget(
-                rotation,
-                false,
-                KillAuraRotationsConfigurable.INSTANCE,
-                Priority.IMPORTANT_FOR_USAGE_2,
-                mod, 
-                null
-            );
-            Client.displayChatMessage(`§aSet silent rotation to Yaw: ${yaw}, Pitch: ${pitch}`);
-        }
-    });
 });
 

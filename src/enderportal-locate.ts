@@ -226,7 +226,8 @@ script.registerModule({
                         `§aEnder Portal`,
                         `§fX: ${intersectX.toFixed(1)}`,
                         `§fZ: ${intersectZ.toFixed(1)}`,
-                        `§7${Math.floor(ticksRemaining / 20)}s remaining`
+                        `§7Visualization ${Math.floor(ticksRemaining / 20)}s remaining`,
+                        `§d${mc.player?.pos.distanceTo(portalPos).toFixed(1)} Blocks away`
                     ],
                     position: portalPos,
                     textPositionEnum: TextPosition.TOP_CENTER,
