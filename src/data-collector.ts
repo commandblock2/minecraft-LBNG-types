@@ -50,6 +50,8 @@ let zstdProcess: Process | null = null;
 let collectedData: TickData[] = [];
 const HISTORY_SIZE = 40; // Last N ticks for historical player states
 const historicalPlayerStates: HistoricalPlayerState[] = [];
+let lastYaw: number | null = null;
+let lastPitch: number | null = null;
 
 // Helper to convert Minecraft Vec3d to Coordinates3D
 function toCoordinates3D(vec: Vec3d): Coordinates3D {
@@ -99,7 +101,7 @@ function getTraversabilityData(blockState: any): TraversabilityData {
     // More sophisticated checks for SOLID_WALKABLE, OBSTRUCTION, etc.
     // For now, a basic check:
     if (blockState.isSolidBlock(mc.world, new BlockPos(0, 0, 0))) return 'SOLID_WALKABLE'; // Placeholder blockpos
-    return 'OTHER';
+    return 'SOLID_WALKABLE';
 }
 
 script.registerModule({
@@ -161,6 +163,8 @@ script.registerModule({
             logWriter = new BufferedWriter(new OutputStreamWriter(outputStream));
             collectedData = []; // Clear previous data
             historicalPlayerStates.length = 0; // Clear historical data
+            lastYaw = mc.player?.yaw ?? null;
+            lastPitch = mc.player?.pitch ?? null;
             Client.displayChatMessage(`DataCollector enabled. Logging to ${logFileName}`);
 
         } catch (e) {
@@ -342,7 +346,7 @@ script.registerModule({
                         dynamicInterestScan.push(collisionBox);
                     }
                 }
-            }); 
+            });
             const localEnvironmentScan: CollisionBox[] = [...fixedRadiusScan, ...dynamicInterestScan];
 
             // 4. Baritone Action (This is the most challenging part without direct API)
@@ -361,43 +365,44 @@ script.registerModule({
             // Infer Baritone's action based on mc.player.input
             const playerInput: PlayerInput = mc.player.input.playerInput;
 
-            if (baritone.getPathingBehavior().isPathing()) {
-                if (playerInput.forward() && playerInput.left()) {
-                    baritoneAction.move_direction = 'FORWARD_LEFT';
-                } else if (playerInput.forward() && playerInput.right()) {
-                    baritoneAction.move_direction = 'FORWARD_RIGHT';
-                } else if (playerInput.backward() && playerInput.left()) {
-                    baritoneAction.move_direction = 'BACKWARD_LEFT';
-                } else if (playerInput.backward() && playerInput.right()) {
-                    baritoneAction.move_direction = 'BACKWARD_RIGHT';
-                } else if (playerInput.forward()) {
-                    baritoneAction.move_direction = 'FORWARD';
-                } else if (playerInput.backward()) {
-                    baritoneAction.move_direction = 'BACKWARD';
-                } else if (playerInput.left()) {
-                    baritoneAction.move_direction = 'LEFT';
-                } else if (playerInput.right()) {
-                    baritoneAction.move_direction = 'RIGHT';
-                } else {
-                    baritoneAction.move_direction = 'NONE';
-                }
 
-                baritoneAction.jump = playerInput.jump();
-                baritoneAction.sneak = playerInput.sneak();
-                baritoneAction.sprint = playerInput.sprint();
-
-                // For look_change, we don't have direct access to Baritone's intended look changes.
-                // This would typically be inferred from changes in player yaw/pitch over time,
-                // or if Baritone exposed its target rotations. For now, we'll leave it at 0.
-                baritoneAction.look_change = { yaw: 0, pitch: 0 };
+            if (playerInput.forward() && playerInput.left()) {
+                baritoneAction.move_direction = 'FORWARD_LEFT';
+            } else if (playerInput.forward() && playerInput.right()) {
+                baritoneAction.move_direction = 'FORWARD_RIGHT';
+            } else if (playerInput.backward() && playerInput.left()) {
+                baritoneAction.move_direction = 'BACKWARD_LEFT';
+            } else if (playerInput.backward() && playerInput.right()) {
+                baritoneAction.move_direction = 'BACKWARD_RIGHT';
+            } else if (playerInput.forward()) {
+                baritoneAction.move_direction = 'FORWARD';
+            } else if (playerInput.backward()) {
+                baritoneAction.move_direction = 'BACKWARD';
+            } else if (playerInput.left()) {
+                baritoneAction.move_direction = 'LEFT';
+            } else if (playerInput.right()) {
+                baritoneAction.move_direction = 'RIGHT';
             } else {
-                // If Baritone is not pathing, assume no specific action from Baritone
                 baritoneAction.move_direction = 'NONE';
-                baritoneAction.look_change = { yaw: 0, pitch: 0 };
-                baritoneAction.jump = false;
-                baritoneAction.sneak = false;
-                baritoneAction.sprint = false;
             }
+
+            baritoneAction.jump = playerInput.jump();
+            baritoneAction.sneak = playerInput.sneak();
+            baritoneAction.sprint = playerInput.sprint();
+
+            let yawDiff = 0;
+            let pitchDiff = 0;
+
+            if (lastYaw !== null && lastPitch !== null) {
+                yawDiff = mc.player.yaw - lastYaw;
+                pitchDiff = mc.player.pitch - lastPitch;
+            }
+
+            baritoneAction.look_change = { yaw: yawDiff, pitch: pitchDiff };
+
+            lastYaw = mc.player.yaw;
+            lastPitch = mc.player.pitch;
+
 
 
             const tickData: TickData = {
