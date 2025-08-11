@@ -388,7 +388,7 @@ script.registerModule({
 
             baritoneAction.jump = playerInput.jump();
             baritoneAction.sneak = playerInput.sneak();
-            baritoneAction.sprint = playerInput.sprint();
+            baritoneAction.sprint = mc.player.isSprinting(); // TODO: special care for the bot when inferencing.
 
             let yawDiff = 0;
             let pitchDiff = 0;
