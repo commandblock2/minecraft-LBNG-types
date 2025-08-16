@@ -2,11 +2,18 @@ import { File } from "jvm-types/java/io/File";
 import { FileOutputStream } from "jvm-types/java/io/FileOutputStream";
 import { OutputStreamWriter } from "jvm-types/java/io/OutputStreamWriter";
 import { BufferedWriter } from "jvm-types/java/io/BufferedWriter";
+import { InputStreamReader } from "jvm-types/java/io/InputStreamReader";
+import { BufferedReader } from "jvm-types/java/io/BufferedReader";
 import { ProcessBuilder } from "jvm-types/java/lang/ProcessBuilder";
 import { Process } from "jvm-types/java/lang/Process";
 import { OutputStream } from "jvm-types/java/io/OutputStream";
 import { VisualizationManager, fadeOutInterpolatorFrom, defaultRainbowInterpolator } from "lbng-utils-typed/dist/visualization-utils";
 import { Color4b } from "jvm-types/net/ccbluex/liquidbounce/render/engine/type/Color4b";
+
+import { RotationManager } from "jvm-types/net/ccbluex/liquidbounce/utils/aiming/RotationManager";
+import { Rotation } from "jvm-types/net/ccbluex/liquidbounce/utils/aiming/data/Rotation";
+import { KillAuraRotationsConfigurable } from "jvm-types/net/ccbluex/liquidbounce/features/module/modules/combat/killaura/KillAuraRotationsConfigurable";
+import { Priority } from "jvm-types/net/ccbluex/liquidbounce/utils/kotlin/Priority";
 
 import { GameTickEvent } from "jvm-types/net/ccbluex/liquidbounce/event/events/GameTickEvent";
 import { EntityPose } from "jvm-types/net/minecraft/entity/EntityPose";
@@ -40,6 +47,8 @@ import { BlockView } from "jvm-types/net/minecraft/world/BlockView";
 import { HashSet } from "jvm-types/java/util/HashSet";
 import { Vec3i } from "jvm-types/net/minecraft/util/math/Vec3i";
 import { Goal } from "jvm-types/baritone/api/pathing/goals/Goal";
+import { MovementInputEvent } from "jvm-types/net/ccbluex/liquidbounce/event/events/MovementInputEvent";
+import { DirectionalInput } from "jvm-types/net/ccbluex/liquidbounce/utils/movement/DirectionalInput";
 
 const script = registerScript.apply({
     name: "data-collector",
@@ -140,11 +149,20 @@ script.registerModule({
         setBaritoneGoal: Setting.boolean({
             name: "Set Baritone Goal",
             default: false
+        }),
+        launchCustomInferenceProcess: Setting.boolean({
+            name: "Launch Custom Inference Process",
+            default: false
+        }),
+        customInferenceProcessCommand: Setting.text({
+            name: "Custom Inference Process Command",
+            default: ""
         })
     }
 }, (mod) => {
-    let logWriter: BufferedWriter | null = null;
-    let zstdProcess: Process | null = null;
+    let processWriter: BufferedWriter | null = null;
+    let externalProcess: Process | null = null;
+    let processReader: BufferedReader | null = null; // New BufferedReader for process stdout
     let collectedData: TickData[] = [];
     const HISTORY_SIZE = 40; // Last N ticks for historical player states
     const historicalPlayerStates: HistoricalPlayerState[] = [];
@@ -160,18 +178,36 @@ script.registerModule({
 
     mod.on("enable", () => {
         try {
-            const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-            const logFileName = `${mod.settings.outputFilePrefix.get()}_${timestamp}.jsonl.zst`;
-            const processBuilder = new ProcessBuilder(["zstd", "-o", logFileName]);
-            zstdProcess = processBuilder.start();
-            const outputStream = zstdProcess.getOutputStream();
-            // @ts-expect-error
-            logWriter = new BufferedWriter(new OutputStreamWriter(outputStream));
+            if (mod.settings.launchCustomInferenceProcess.get()) {
+                const commandString = mod.settings.customInferenceProcessCommand.get();
+                if (commandString) {
+                    const parts = commandString.split(" ");
+                    const customProcessBuilder = new ProcessBuilder(parts);
+                    externalProcess = customProcessBuilder.start();
+                    // Initialize BufferedReader for stdout
+                    processReader = new BufferedReader(new InputStreamReader(externalProcess.getInputStream()));
+                    // Initialize processWriter for stdin of the inference engine
+                    // @ts-expect-error
+                    processWriter = new BufferedWriter(new OutputStreamWriter(externalProcess.getOutputStream()));
+                    Client.displayChatMessage(`[DataCollector] Launched custom inference process: ${commandString}`);
+                } else {
+                    Client.displayChatMessage(`[DataCollector] Custom inference process command is empty. Not launching.`);
+                }
+            } else {
+                const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+                const logFileName = `${mod.settings.outputFilePrefix.get()}_${timestamp}.jsonl.zst`;
+                const processBuilder = new ProcessBuilder(["zstd", "-o", logFileName]);
+                externalProcess = processBuilder.start();
+                const outputStream = externalProcess.getOutputStream();
+                // @ts-expect-error
+                processWriter = new BufferedWriter(new OutputStreamWriter(outputStream)); // Renamed from processWriter
+                Client.displayChatMessage(`DataCollector enabled. Logging to ${logFileName}`);
+            }
+
             collectedData = []; // Clear previous data
             historicalPlayerStates.length = 0; // Clear historical data
             lastYaw = mc.player?.yaw ?? null;
             lastPitch = mc.player?.pitch ?? null;
-            Client.displayChatMessage(`DataCollector enabled. Logging to ${logFileName}`);
 
             if (mod.settings.setBaritoneGoal.get()) {
                 const goalX = mod.settings.goalX.get();
@@ -183,38 +219,54 @@ script.registerModule({
             }
 
         } catch (e) {
-            Client.displayChatMessage(`[DataCollector] Failed to start zstd process or open log file: ${e}`);
-            logWriter = null;
-            zstdProcess = null;
+            Client.displayChatMessage(`[DataCollector] Failed to enable: ${e}`);
+            processWriter = null;
+            externalProcess = null;
+            processReader = null; // Ensure reader is nullified on error
         }
     });
 
     mod.on("disable", () => {
-        if (logWriter) {
+        if (processWriter) {
             try {
                 // Write any remaining collected data before closing
                 collectedData.forEach(data => {
-                    if (logWriter) { // Ensure logWriter is not null before writing
+                    if (processWriter) { // Ensure processWriter is not null before writing
                         // @ts-expect-error
-                        logWriter.write(JSON.stringify(data));
-                        logWriter.newLine();
+                        processWriter.write(JSON.stringify(data));
+                        processWriter.newLine();
                     }
                 });
-                if (logWriter) { // Ensure logWriter is not null before closing
-                    logWriter.close();
+                if (processWriter) { // Ensure processWriter is not null before closing
+                    processWriter.close();
                 }
-                Client.displayChatMessage("DataCollector disabled. Waiting for zstd to finish compression...");
-                if (zstdProcess) {
-                    const exitCode = zstdProcess.waitFor();
-                    Client.displayChatMessage(`zstd process exited with code: ${exitCode}`);
-                }
-                Client.displayChatMessage("Data file closed and compressed.");
+                Client.displayChatMessage("DataCollector disabled. Waiting for external process to finish...");
             } catch (e) {
-                Client.displayChatMessage(`[DataCollector] Failed to close log file or wait for zstd: ${e}`);
+                Client.displayChatMessage(`[DataCollector] Failed to close log file: ${e}`);
             }
-            logWriter = null;
-            zstdProcess = null;
+            processWriter = null;
         }
+
+        if (processReader) {
+            try {
+                processReader.close();
+            } catch (e) {
+                Client.displayChatMessage(`[DataCollector] Failed to close process reader: ${e}`);
+            }
+            processReader = null;
+        }
+
+        if (externalProcess) {
+            try {
+                const exitCode = externalProcess.waitFor();
+                Client.displayChatMessage(`[DataCollector] External process exited with code: ${exitCode}`);
+            } catch (e) {
+                Client.displayChatMessage(`[DataCollector] Failed to wait for external process: ${e}`);
+            }
+            externalProcess.destroy(); // Ensure process is terminated
+            externalProcess = null;
+        }
+
         if (visualizationManager) {
             visualizationManager.clearAllVisualizations();
         }
@@ -227,239 +279,334 @@ script.registerModule({
         }
     });
 
+    
+
+    mod.on("movementinput", (event: MovementInputEvent) => {
+
+        if (!mc.player)
+            return;
+
+        // Handle inference process output if enabled
+        if (mod.settings.launchCustomInferenceProcess.get() && processReader) {
+            try {
+                while (processReader.ready()) {
+                    const line = processReader.readLine();
+                    if (line) {
+                        try {
+                            const inferenceOutput: BaritoneAction = JSON.parse(line);
+                            // Apply inferred actions to the player
+                            if (inferenceOutput.look_change) {
+                                const targetYaw = mc.player.yaw + inferenceOutput.look_change.yaw;
+                                const targetPitch = mc.player.pitch + inferenceOutput.look_change.pitch;
+                                RotationManager.INSTANCE.setRotationTarget(
+                                    new Rotation(Primitives.float(targetYaw), Primitives.float(targetPitch), true),
+                                    false,
+                                    KillAuraRotationsConfigurable.INSTANCE,
+                                    Priority.IMPORTANT_FOR_USAGE_2,
+                                    mod,
+                                    null
+                                );
+                            }
+
+                            let currentForward = mc.player.input.playerInput.forward();
+                            let currentBackward = mc.player.input.playerInput.backward();
+                            let currentLeft = mc.player.input.playerInput.left();
+                            let currentRight = mc.player.input.playerInput.right();
+                            let currentJump = mc.player.input.playerInput.jump();
+                            let currentSneak = mc.player.input.playerInput.sneak();
+                            let currentSprint = mc.player.input.playerInput.sprint();
+
+                            if (inferenceOutput.move_direction) {
+                                currentForward = false;
+                                currentBackward = false;
+                                currentLeft = false;
+                                currentRight = false;
+
+                                switch (inferenceOutput.move_direction) {
+                                    case 'FORWARD': currentForward = true; break;
+                                    case 'BACKWARD': currentBackward = true; break;
+                                    case 'LEFT': currentLeft = true; break;
+                                    case 'RIGHT': currentRight = true; break;
+                                    case 'FORWARD_LEFT': currentForward = true; currentLeft = true; break;
+                                    case 'FORWARD_RIGHT': currentForward = true; currentRight = true; break;
+                                    case 'BACKWARD_LEFT': currentBackward = true; currentLeft = true; break;
+                                    case 'BACKWARD_RIGHT': currentBackward = true; currentRight = true; break;
+                                }
+                            }
+
+                            if (inferenceOutput.jump !== undefined && mc.player.onGround) {
+                                currentJump = inferenceOutput.jump;
+                            }
+                            if (inferenceOutput.sneak !== undefined && !currentJump) {
+                                currentSneak = inferenceOutput.sneak;
+                            }
+                            if (inferenceOutput.sprint !== undefined) {
+                                currentSprint = inferenceOutput.sprint;
+                            }
+
+                            // Reconstruct PlayerInput
+                            event.jump = currentJump;
+                            event.sneak = currentSneak;
+                            event.directionalInput = new DirectionalInput(
+                                currentForward,
+                                currentBackward,
+                                currentLeft,
+                                currentRight
+                            );
+
+                            // mc.player.setSprinting(currentSprint)
+
+                        } catch (parseError) {
+                            Client.displayChatMessage(`[DataCollector] Error parsing inference output: ${parseError} - Line: ${line}`);
+                            console.error(parseError);
+                        }
+                    }
+                }
+            } catch (readError) {
+                Client.displayChatMessage(`[DataCollector] Error reading from inference process stdout: ${readError}`);
+                console.error(readError);
+            }
+        }
+
+    });
+
     mod.on("gametick", (event: GameTickEvent) => {
-        if (!logWriter || !mc.player || !mc.world) {
+        if (!mc.player || !mc.world) {
             return;
         }
 
-        if ((mc.player.age - lastCollectionTick) < (mod.settings.collectionInterval.get() as unknown as number)) {
-            return;
-        }
-        lastCollectionTick = mc.player.age;
 
-        try {
-            // 1. Player State
-            const playerState: PlayerState = {
-                position: toCoordinates3D(mc.player.getPos()),
-                velocity: { vx: mc.player.getVelocity().x, vy: mc.player.getVelocity().y, vz: mc.player.getVelocity().z },
-                look_direction: { yaw: mc.player.yaw, pitch: mc.player.pitch },
-                player_pose: getPlayerPose(mc.player.getPose()),
-                ground_proximity: mc.player.isOnGround(),
-                predicted_passive_next_tick_state: {
-                    // Simplified prediction: assumes constant velocity for one tick
-                    predicted_pos: {
-                        x: mc.player.getX() + mc.player.getVelocity().x,
-                        y: mc.player.getY() + mc.player.getVelocity().y,
-                        z: mc.player.getZ() + mc.player.getVelocity().z,
-                    },
-                    predicted_vel: {
-                        vx: mc.player.getVelocity().x,
-                        vy: mc.player.getVelocity().y,
-                        vz: mc.player.getVelocity().z,
-                    }
-                }
-            };
-
-            // 2. Historical Player States
-            const currentHistoricalState: HistoricalPlayerState = {
-                position: toCoordinates3D(mc.player.getPos()),
-                velocity: { vx: mc.player.getVelocity().x, vy: mc.player.getVelocity().y, vz: mc.player.getVelocity().z },
-                look_direction: { yaw: mc.player.yaw, pitch: mc.player.pitch },
-                player_pose: getPlayerPose(mc.player.getPose()),
-                fall_distance: mc.player.fallDistance // Assuming fallDistance is directly accessible
-            };
-            historicalPlayerStates.push(currentHistoricalState);
-            if (historicalPlayerStates.length > HISTORY_SIZE) {
-                historicalPlayerStates.shift(); // Remove oldest entry
+        // Data collection logic (only if not launching custom inference process, or if you want to log both)
+        if (processWriter) {
+            if ((mc.player.age - lastCollectionTick) < (mod.settings.collectionInterval.get() as unknown as number)) {
+                return;
             }
+            lastCollectionTick = mc.player.age;
 
-            // 3. Local Environment Scan
-            const fixedRadiusScan: CollisionBox[] = [];
-            const dynamicInterestScan: CollisionBox[] = [];
+            try {
+                // 1. Player State
+                const playerState: PlayerState = {
+                    position: toCoordinates3D(mc.player.getPos()),
+                    velocity: { vx: mc.player.getVelocity().x, vy: mc.player.getVelocity().y, vz: mc.player.getVelocity().z },
+                    look_direction: { yaw: mc.player.yaw, pitch: mc.player.pitch },
+                    player_pose: getPlayerPose(mc.player.getPose()),
+                    ground_proximity: mc.player.isOnGround(),
+                    predicted_passive_next_tick_state: {
+                        // Simplified prediction: assumes constant velocity for one tick
+                        predicted_pos: {
+                            x: mc.player.getX() + mc.player.getVelocity().x,
+                            y: mc.player.getY() + mc.player.getVelocity().y,
+                            z: mc.player.getZ() + mc.player.getVelocity().z,
+                        },
+                        predicted_vel: {
+                            vx: mc.player.getVelocity().x,
+                            vy: mc.player.getVelocity().y,
+                            vz: mc.player.getVelocity().z,
+                        }
+                    }
+                };
 
-            const playerBlockPos = mc.player.getBlockPos();
-            const scanRadius = mod.settings.scanRadius.get() as unknown as number;
+                // 2. Historical Player States
+                const currentHistoricalState: HistoricalPlayerState = {
+                    position: toCoordinates3D(mc.player.getPos()),
+                    velocity: { vx: mc.player.getVelocity().x, vy: mc.player.getVelocity().y, vz: mc.player.getVelocity().z },
+                    look_direction: { yaw: mc.player.yaw, pitch: mc.player.pitch },
+                    player_pose: getPlayerPose(mc.player.getPose()),
+                    fall_distance: mc.player.fallDistance // Assuming fallDistance is directly accessible
+                };
+                historicalPlayerStates.push(currentHistoricalState);
+                if (historicalPlayerStates.length > HISTORY_SIZE) {
+                    historicalPlayerStates.shift(); // Remove oldest entry
+                }
 
-            // Collect FIXED_RADIUS blocks
-            for (let x = -scanRadius; x <= scanRadius; x++) {
-                for (let y = -scanRadius; y <= scanRadius; y++) {
-                    for (let z = -scanRadius; z <= scanRadius; z++) {
-                        const blockPos = new BlockPos(playerBlockPos.getX() + x, playerBlockPos.getY() + y, playerBlockPos.getZ() + z);
-                        const blockState = mc.world.getBlockState(blockPos);
+                // 3. Local Environment Scan
+                const fixedRadiusScan: CollisionBox[] = [];
+                const dynamicInterestScan: CollisionBox[] = [];
 
-                        if (blockState && !blockState.isAir()) {
-                            const blockBoxes = blockState.getCollisionShape(mc.world as unknown as BlockView, blockPos).getBoundingBoxes();
-                            for (const blockBox of blockBoxes) {
-                                const relativePos = {
-                                    x: blockPos.getX() - mc.player.getX(),
-                                    y: blockPos.getY() - mc.player.getY(),
-                                    z: blockPos.getZ() - mc.player.getZ()
-                                };
+                const playerBlockPos = mc.player.getBlockPos();
+                const scanRadius = mod.settings.scanRadius.get() as unknown as number;
 
-                                fixedRadiusScan.push({
-                                    bounding_box_coordinates: toBoundingBoxCoordinates(blockBox),
-                                    relative_position: relativePos,
-                                    box_dimensions: calculateBoxDimensions(blockBox),
-                                    element_identifier: blockState.getBlock().getName().getString(),
-                                    area_source_type: 'FIXED_RADIUS'
-                                });
+                // Collect FIXED_RADIUS blocks
+                for (let x = -scanRadius; x <= scanRadius; x++) {
+                    for (let y = -scanRadius; y <= scanRadius; y++) {
+                        for (let z = -scanRadius; z <= scanRadius; z++) {
+                            const blockPos = new BlockPos(playerBlockPos.getX() + x, playerBlockPos.getY() + y, playerBlockPos.getZ() + z);
+                            const blockState = mc.world.getBlockState(blockPos);
+
+                            if (blockState && !blockState.isAir()) {
+                                const blockBoxes = blockState.getCollisionShape(mc.world as unknown as BlockView, blockPos).getBoundingBoxes();
+                                for (const blockBox of blockBoxes) {
+                                    const relativePos = {
+                                        x: blockPos.getX() - mc.player.getX(),
+                                        y: blockPos.getY() - mc.player.getY(),
+                                        z: blockPos.getZ() - mc.player.getZ()
+                                    };
+
+                                    fixedRadiusScan.push({
+                                        bounding_box_coordinates: toBoundingBoxCoordinates(blockBox),
+                                        relative_position: relativePos,
+                                        box_dimensions: calculateBoxDimensions(blockBox),
+                                        element_identifier: blockState.getBlock().getName().getString(),
+                                        area_source_type: 'FIXED_RADIUS'
+                                    });
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            // Collect DYNAMIC_INTEREST blocks along Baritone's path with expansion
-            const baritone = BaritoneAPI.getProvider().getPrimaryBaritone();
-            // @ts-expect-error
-            const currentPath: IPath | null = baritone.getPathingBehavior().getPath().orElseGet(() => null);
-
+                // Collect DYNAMIC_INTEREST blocks along Baritone's path with expansion
+                const baritone = BaritoneAPI.getProvider().getPrimaryBaritone();
+                // @ts-expect-error
+                const currentPath: IPath | null = baritone.getPathingBehavior().getPath().orElseGet(() => null);
 
 
-            if (currentPath && currentPath != prevPath) {
-                dynamicInterestBlockSet = new HashSet();
-                prevPath = currentPath;
-                const pathPositions = currentPath.positions();
-                const horizontalExpand = 1;
-                const downwardExpand = 1;
-                const upwardExpand = 2;
 
-                for (const pathBlock of pathPositions) {
-                    for (let x = -horizontalExpand; x <= horizontalExpand; x++) {
-                        for (let y = -downwardExpand; y <= upwardExpand; y++) {
-                            for (let z = -horizontalExpand; z <= horizontalExpand; z++) {
-                                const blockPos = new BlockPos(pathBlock.getX() + x, pathBlock.getY() + y, pathBlock.getZ() + z);
-                                if (dynamicInterestBlockSet.contains(blockPos))
-                                    continue
-                                else
-                                    dynamicInterestBlockSet.add(blockPos)
+                if (currentPath && currentPath != prevPath) {
+                    dynamicInterestBlockSet = new HashSet();
+                    prevPath = currentPath;
+                    const pathPositions = currentPath.positions();
+                    const horizontalExpand = 1;
+                    const downwardExpand = 1;
+                    const upwardExpand = 2;
+
+                    for (const pathBlock of pathPositions) {
+                        for (let x = -horizontalExpand; x <= horizontalExpand; x++) {
+                            for (let y = -downwardExpand; y <= upwardExpand; y++) {
+                                for (let z = -horizontalExpand; z <= horizontalExpand; z++) {
+                                    const blockPos = new BlockPos(pathBlock.getX() + x, pathBlock.getY() + y, pathBlock.getZ() + z);
+                                    if (dynamicInterestBlockSet.contains(blockPos))
+                                        continue
+                                    else
+                                        dynamicInterestBlockSet.add(blockPos)
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            dynamicInterestBlockSet.forEach((blockPos: BlockPos) => {
-                let blockState = mc.world.getBlockState(blockPos);
-                if (blockState && !blockState.isAir()) {
-                    if (!mc.player)
-                        return;
-                    const blockBoxes = blockState.getCollisionShape(mc.world as unknown as BlockView, blockPos).getBoundingBoxes();
-                    for (const blockBox of blockBoxes) {
-                        const relativePos = {
-                            x: blockPos.getX() - mc.player.getX(),
-                            y: blockPos.getY() - mc.player.getY(),
-                            z: blockPos.getZ() - mc.player.getZ()
-                        };
+                dynamicInterestBlockSet.forEach((blockPos: BlockPos) => {
+                    let blockState = mc.world.getBlockState(blockPos);
+                    if (blockState && !blockState.isAir()) {
+                        if (!mc.player)
+                            return;
+                        const blockBoxes = blockState.getCollisionShape(mc.world as unknown as BlockView, blockPos).getBoundingBoxes();
+                        for (const blockBox of blockBoxes) {
+                            const relativePos = {
+                                x: blockPos.getX() - mc.player.getX(),
+                                y: blockPos.getY() - mc.player.getY(),
+                                z: blockPos.getZ() - mc.player.getZ()
+                            };
 
-                        const collisionBox: CollisionBox = {
-                            bounding_box_coordinates: toBoundingBoxCoordinates(blockBox),
-                            relative_position: relativePos,
-                            box_dimensions: calculateBoxDimensions(blockBox),
-                            element_identifier: blockState.getBlock().getName().getString(),
-                            area_source_type: 'DYNAMIC_INTEREST'
-                        };
-                        dynamicInterestScan.push(collisionBox);
-                    }
-                }
-            });
-            const localEnvironmentScan: CollisionBox[] = [...fixedRadiusScan, ...dynamicInterestScan];
-
-            // 4. Baritone Action (This is the most challenging part without direct API)
-            // This will require introspection into Baritone's internal state or inferring from its movement.
-            // For MVP, we might need to simplify or make assumptions.
-            // Let's try to infer based on Baritone's current movement state.
-            // This is a placeholder and needs significant refinement.
-            const baritoneAction: BaritoneAction = {
-                move_direction: 'NONE',
-                look_change: { yaw: 0, pitch: 0 },
-                jump: false,
-                sneak: false,
-                sprint: false
-            };
-
-            // Infer Baritone's action based on mc.player.input
-            const playerInput: PlayerInput = mc.player.input.playerInput;
-
-
-            if (playerInput.forward() && playerInput.left()) {
-                baritoneAction.move_direction = 'FORWARD_LEFT';
-            } else if (playerInput.forward() && playerInput.right()) {
-                baritoneAction.move_direction = 'FORWARD_RIGHT';
-            } else if (playerInput.backward() && playerInput.left()) {
-                baritoneAction.move_direction = 'BACKWARD_LEFT';
-            } else if (playerInput.backward() && playerInput.right()) {
-                baritoneAction.move_direction = 'BACKWARD_RIGHT';
-            } else if (playerInput.forward()) {
-                baritoneAction.move_direction = 'FORWARD';
-            } else if (playerInput.backward()) {
-                baritoneAction.move_direction = 'BACKWARD';
-            } else if (playerInput.left()) {
-                baritoneAction.move_direction = 'LEFT';
-            } else if (playerInput.right()) {
-                baritoneAction.move_direction = 'RIGHT';
-            } else {
-                baritoneAction.move_direction = 'NONE';
-            }
-
-            baritoneAction.jump = playerInput.jump();
-            baritoneAction.sneak = playerInput.sneak();
-            baritoneAction.sprint = mc.player.isSprinting(); // TODO: special care for the bot when inferencing.
-
-            let yawDiff = 0;
-            let pitchDiff = 0;
-
-            if (lastYaw !== null && lastPitch !== null) {
-                yawDiff = mc.player.yaw - lastYaw;
-                pitchDiff = mc.player.pitch - lastPitch;
-            }
-
-            baritoneAction.look_change = { yaw: yawDiff, pitch: pitchDiff };
-
-            lastYaw = mc.player.yaw;
-            lastPitch = mc.player.pitch;
-
-
-
-            const tickData: TickData = {
-                tick_id: mc.player.age,
-                timestamp_ms: Date.now(),
-                player_state: playerState,
-                local_environment_scan: localEnvironmentScan,
-                historical_player_states: [...historicalPlayerStates], // Clone to avoid mutation
-                baritone_action: baritoneAction
-            };
-
-            // @ts-expect-error
-            logWriter.write(JSON.stringify(tickData));
-            logWriter.newLine();
-
-            // Visualize collected boxes if enabled
-            tickCounter++;
-            if (mod.settings.visualizeBoxes.get() && !(tickCounter % 5)) {
-                localEnvironmentScan.forEach(collisionBox => {
-                    const box = toMinecraftBox(collisionBox.bounding_box_coordinates);
-                    const position = toAbsoluteVec3d(collisionBox.relative_position, mc.player!.getPos());
-                    const fillColor = collisionBox.area_source_type === 'DYNAMIC_INTEREST'
-                        ? new Color4b(150, 255, 150, 150) // Lighter Green for DYNAMIC_INTEREST
-                        : new Color4b(150, 150, 255, 150); // Lighter Blue for FIXED_RADIUS
-
-                    visualizationManager.addVisualization({
-                        durationTicks: 5, // Display for 2 ticks
-                        boxData: {
-                            box: box,
-                            position: position,
-                            glow: true, // No glow
-                            fillInterpolator: fadeOutInterpolatorFrom(fillColor),
-                            outlineInterpolator: fadeOutInterpolatorFrom(new Color4b(fillColor.r(), fillColor.g(), fillColor.b(), 255))
+                            const collisionBox: CollisionBox = {
+                                bounding_box_coordinates: toBoundingBoxCoordinates(blockBox),
+                                relative_position: relativePos,
+                                box_dimensions: calculateBoxDimensions(blockBox),
+                                element_identifier: blockState.getBlock().getName().getString(),
+                                area_source_type: 'DYNAMIC_INTEREST'
+                            };
+                            dynamicInterestScan.push(collisionBox);
                         }
-                    });
+                    }
                 });
-            }
+                const localEnvironmentScan: CollisionBox[] = [...fixedRadiusScan, ...dynamicInterestScan];
 
-        } catch (e) {
-            Client.displayChatMessage(`[DataCollector] Error writing to log: ${e}`);
-            console.error(e); // Log to console for more details
+                // 4. Baritone Action (This is the most challenging part without direct API)
+                // This will require introspection into Baritone's internal state or inferring from its movement.
+                // For MVP, we might need to simplify or make assumptions.
+                // Let's try to infer based on Baritone's current movement state.
+                // This is a placeholder and needs significant refinement.
+                const baritoneAction: BaritoneAction = {
+                    move_direction: 'NONE',
+                    look_change: { yaw: 0, pitch: 0 },
+                    jump: false,
+                    sneak: false,
+                    sprint: false
+                };
+
+                // Infer Baritone's action based on mc.player.input
+                const playerInput: PlayerInput = mc.player.input.playerInput;
+
+
+                if (playerInput.forward() && playerInput.left()) {
+                    baritoneAction.move_direction = 'FORWARD_LEFT';
+                } else if (playerInput.forward() && playerInput.right()) {
+                    baritoneAction.move_direction = 'FORWARD_RIGHT';
+                } else if (playerInput.backward() && playerInput.left()) {
+                    baritoneAction.move_direction = 'BACKWARD_LEFT';
+                } else if (playerInput.backward() && playerInput.right()) {
+                    baritoneAction.move_direction = 'BACKWARD_RIGHT';
+                } else if (playerInput.forward()) {
+                    baritoneAction.move_direction = 'FORWARD';
+                } else if (playerInput.backward()) {
+                    baritoneAction.move_direction = 'BACKWARD';
+                } else if (playerInput.left()) {
+                    baritoneAction.move_direction = 'LEFT';
+                } else if (playerInput.right()) {
+                    baritoneAction.move_direction = 'RIGHT';
+                } else {
+                    baritoneAction.move_direction = 'NONE';
+                }
+
+                baritoneAction.jump = playerInput.jump();
+                baritoneAction.sneak = playerInput.sneak();
+                baritoneAction.sprint = mc.player.isSprinting(); // TODO: special care for the bot when inferencing.
+
+                let yawDiff = 0;
+                let pitchDiff = 0;
+
+                if (lastYaw !== null && lastPitch !== null) {
+                    yawDiff = mc.player.yaw - lastYaw;
+                    pitchDiff = mc.player.pitch - lastPitch;
+                }
+
+                baritoneAction.look_change = { yaw: yawDiff, pitch: pitchDiff };
+
+                lastYaw = mc.player.yaw;
+                lastPitch = mc.player.pitch;
+
+
+
+                const tickData: TickData = {
+                    tick_id: mc.player.age,
+                    timestamp_ms: Date.now(),
+                    player_state: playerState,
+                    local_environment_scan: localEnvironmentScan,
+                    historical_player_states: [...historicalPlayerStates], // Clone to avoid mutation
+                    baritone_action: baritoneAction
+                };
+
+                // @ts-expect-error
+                processWriter.write(JSON.stringify(tickData));
+                processWriter.newLine();
+
+                // Visualize collected boxes if enabled
+                tickCounter++;
+                if (mod.settings.visualizeBoxes.get() && !(tickCounter % 5)) {
+                    localEnvironmentScan.forEach(collisionBox => {
+                        const box = toMinecraftBox(collisionBox.bounding_box_coordinates);
+                        const position = toAbsoluteVec3d(collisionBox.relative_position, mc.player!.getPos());
+                        const fillColor = collisionBox.area_source_type === 'DYNAMIC_INTEREST'
+                            ? new Color4b(150, 255, 150, 150) // Lighter Green for DYNAMIC_INTEREST
+                            : new Color4b(150, 150, 255, 150); // Lighter Blue for FIXED_RADIUS
+
+                        visualizationManager.addVisualization({
+                            durationTicks: 5, // Display for 2 ticks
+                            boxData: {
+                                box: box,
+                                position: position,
+                                glow: true, // No glow
+                                fillInterpolator: fadeOutInterpolatorFrom(fillColor),
+                                outlineInterpolator: fadeOutInterpolatorFrom(new Color4b(fillColor.r(), fillColor.g(), fillColor.b(), 255))
+                            }
+                        });
+                    });
+                }
+
+            } catch (e) {
+                Client.displayChatMessage(`[DataCollector] Error writing to log: ${e}`);
+                console.error(e); // Log to console for more details
+            }
         }
     });
 });
