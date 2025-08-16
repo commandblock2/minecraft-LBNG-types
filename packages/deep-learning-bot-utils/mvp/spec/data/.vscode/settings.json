@@ -1,0 +1,10 @@
+{
+    "json.schemas": [
+    {
+        "fileMatch": [
+            "example-session.json"
+        ],
+        "url": "./combined_schema.json"
+    }
+]
+}

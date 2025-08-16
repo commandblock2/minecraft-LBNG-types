@@ -63,6 +63,8 @@
 
 **Baritone Reference Data (Training Phase Only):**
 
+Note: this is subject to change, we will ignore this completely for now.
+
 *   **Current Target Path:** A sequence of waypoints representing Baritone's computed optimal path to the current goal.
     *   **Path Waypoints:** Array of 3D coordinates (`X`, `Y`, `Z`) representing the sequence of blocks to traverse.
     *   **Path Length:** Total number of waypoints in the current path.
@@ -113,12 +115,6 @@
 
 
 #### **Phase 4: Inventory Management & Contextual Actions (Information Types)**
-
-
-**Local Environment Scan (Enhancements):**
-
-*   For each environmental element:
-    *   **Element State Properties:** Specific configuration data for the element (e.g., directionality of stairs, state of a farmland block).
 
 **Detailed Inventory Snapshot:**
 

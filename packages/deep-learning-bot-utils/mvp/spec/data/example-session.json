@@ -1,0 +1,221 @@
+[
+    {
+        "tick_id": 12345,
+        "timestamp_ms": 1678886400000,
+        "player_state": {
+            "position": {
+                "x": 100.5,
+                "y": 64.0,
+                "z": 200.5
+            },
+            "velocity": {
+                "vx": 0.0,
+                "vy": -0.0784,
+                "vz": 0.0
+            },
+            "look_direction": {
+                "yaw": 45.0,
+                "pitch": 15.0
+            },
+            "player_pose": "STANDING",
+            "ground_proximity": true,
+            "predicted_passive_next_tick_state": {
+                "predicted_pos": {
+                    "x": 100.5,
+                    "y": 63.9216,
+                    "z": 200.5
+                },
+                "predicted_vel": {
+                    "vx": 0.0,
+                    "vy": -0.0784,
+                    "vz": 0.0
+                }
+            }
+        },
+        "local_environment_scan": [
+            {
+                "bounding_box_coordinates": {
+                    "min_x": 99.0,
+                    "min_y": 63.0,
+                    "min_z": 199.0,
+                    "max_x": 100.0,
+                    "max_y": 64.0,
+                    "max_z": 200.0
+                },
+                "relative_position": {
+                    "x": -0.5,
+                    "y": -0.5,
+                    "z": -0.5
+                },
+                "box_dimensions": {
+                    "length": 1.0,
+                    "width": 1.0,
+                    "height": 1.0
+                },
+                "element_identifier": "minecraft:stone",
+                "area_source_type": "FIXED_RADIUS"
+            }
+        ],
+        "historical_player_states": [
+            {
+                "position": {
+                    "x": 100.5,
+                    "y": 64.0,
+                    "z": 200.5
+                },
+                "velocity": {
+                    "vx": 0.0,
+                    "vy": -0.0784,
+                    "vz": 0.0
+                },
+                "look_direction": {
+                    "yaw": 45.0,
+                    "pitch": 15.0
+                },
+                "player_pose": "STANDING",
+                "fall_distance": 0.0
+            }
+        ],
+        "baritone_action": {
+            "move_direction": "FORWARD",
+            "look_change": {
+                "yaw": 0.0,
+                "pitch": 0.0
+            },
+            "jump": false,
+            "sneak": false,
+            "sprint": true
+        }
+    },
+    {
+        "tick_id": 12346,
+        "timestamp_ms": 1678886400050,
+        "player_state": {
+            "position": {
+                "x": 100.55,
+                "y": 64.0,
+                "z": 200.5
+            },
+            "velocity": {
+                "vx": 0.05,
+                "vy": -0.0784,
+                "vz": 0.0
+            },
+            "look_direction": {
+                "yaw": 45.0,
+                "pitch": 15.0
+            },
+            "player_pose": "SPRINTING",
+            "ground_proximity": true,
+            "predicted_passive_next_tick_state": {
+                "predicted_pos": {
+                    "x": 100.6,
+                    "y": 63.9216,
+                    "z": 200.5
+                },
+                "predicted_vel": {
+                    "vx": 0.05,
+                    "vy": -0.0784,
+                    "vz": 0.0
+                }
+            }
+        },
+        "local_environment_scan": [
+            {
+                "bounding_box_coordinates": {
+                    "min_x": 99.0,
+                    "min_y": 63.0,
+                    "min_z": 199.0,
+                    "max_x": 100.0,
+                    "max_y": 64.0,
+                    "max_z": 200.0
+                },
+                "relative_position": {
+                    "x": -0.55,
+                    "y": -0.5,
+                    "z": -0.5
+                },
+                "box_dimensions": {
+                    "length": 1.0,
+                    "width": 1.0,
+                    "height": 1.0
+                },
+                "element_identifier": "minecraft:stone",
+                "traversability_data": "SOLID_WALKABLE",
+                "element_state_properties": {},
+                "area_source_type": "FIXED_RADIUS",
+                "box_validity": true
+            },
+            {
+                "bounding_box_coordinates": {
+                    "min_x": 101.0,
+                    "min_y": 63.0,
+                    "min_z": 200.0,
+                    "max_x": 102.0,
+                    "max_y": 64.0,
+                    "max_z": 201.0
+                },
+                "relative_position": {
+                    "x": 0.45,
+                    "y": -0.5,
+                    "z": 0.5
+                },
+                "box_dimensions": {
+                    "length": 1.0,
+                    "width": 1.0,
+                    "height": 1.0
+                },
+                "element_identifier": "minecraft:grass_block",
+                "area_source_type": "DYNAMIC_INTEREST"
+            }
+        ],
+        "historical_player_states": [
+            {
+                "position": {
+                    "x": 100.5,
+                    "y": 64.0,
+                    "z": 200.5
+                },
+                "velocity": {
+                    "vx": 0.0,
+                    "vy": -0.0784,
+                    "vz": 0.0
+                },
+                "look_direction": {
+                    "yaw": 45.0,
+                    "pitch": 15.0
+                },
+                "player_pose": "STANDING",
+                "fall_distance": 0.0
+            },
+            {
+                "position": {
+                    "x": 100.5,
+                    "y": 64.0,
+                    "z": 200.5
+                },
+                "velocity": {
+                    "vx": 0.0,
+                    "vy": -0.0784,
+                    "vz": 0.0
+                },
+                "look_direction": {
+                    "yaw": 45.0,
+                    "pitch": 15.0
+                },
+                "player_pose": "STANDING",
+                "fall_distance": 0.0
+            }
+        ],
+        "baritone_action": {
+            "move_direction": "FORWARD",
+            "look_change": {
+                "yaw": 0.0,
+                "pitch": 0.0
+            },
+            "jump": false,
+            "sneak": false,
+            "sprint": true
+        }
+    }
+]

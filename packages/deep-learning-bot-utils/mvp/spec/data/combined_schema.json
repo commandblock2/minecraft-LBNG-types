@@ -1,0 +1,293 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Combined Input and Output Data Schema",
+    "description": "Schema defining the structure of observation data (X) and Baritone's action (Y) for each tick in a training scenario.",
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "tick_id": {
+                "type": "integer",
+                "description": "Unique identifier for the game tick within the current Minecraft session."
+            },
+            "timestamp_ms": {
+                "type": "integer",
+                "description": "Unix timestamp in milliseconds when this observation was recorded."
+            },
+            "player_state": {
+                "$ref": "#/$defs/PlayerState"
+            },
+            "local_environment_scan": {
+                "type": "array",
+                "description": "A list of collision boxes from nearby environmental elements.",
+                "items": {
+                    "$ref": "#/$defs/CollisionBox"
+                },
+                "minItems": 0
+            },
+            "historical_player_states": {
+                "type": "array",
+                "description": "A chronological list of the player's state for the last N ticks.",
+                "items": {
+                    "$ref": "#/$defs/HistoricalPlayerState"
+                },
+                "minItems": 0,
+                "maxItems": 39
+            },
+            "baritone_action": {
+                "$ref": "output_schema.json"
+            }
+        },
+        "required": [
+            "tick_id",
+            "timestamp_ms",
+            "player_state",
+            "local_environment_scan",
+            "historical_player_states",
+            "baritone_action"
+        ],
+        "additionalProperties": false
+    },
+    "$defs": {
+        "Coordinates3D": {
+            "type": "object",
+            "properties": {
+                "x": {
+                    "type": "number"
+                },
+                "y": {
+                    "type": "number"
+                },
+                "z": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "x",
+                "y",
+                "z"
+            ],
+            "additionalProperties": false
+        },
+        "Velocity3D": {
+            "type": "object",
+            "properties": {
+                "vx": {
+                    "type": "number"
+                },
+                "vy": {
+                    "type": "number"
+                },
+                "vz": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "vx",
+                "vy",
+                "vz"
+            ],
+            "additionalProperties": false
+        },
+        "LookDirection": {
+            "type": "object",
+            "properties": {
+                "yaw": {
+                    "type": "number"
+                },
+                "pitch": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "yaw",
+                "pitch"
+            ],
+            "additionalProperties": false
+        },
+        "PlayerPose": {
+            "type": "string",
+            "enum": [
+                "STANDING",
+                "SNEAKING",
+                "SPRINTING",
+                "SWIMMING",
+                "CRAWLING"
+            ]
+        },
+        "PlayerState": {
+            "type": "object",
+            "properties": {
+                "position": {
+                    "$ref": "#/$defs/Coordinates3D"
+                },
+                "velocity": {
+                    "$ref": "#/$defs/Velocity3D"
+                },
+                "look_direction": {
+                    "$ref": "#/$defs/LookDirection"
+                },
+                "player_pose": {
+                    "$ref": "#/$defs/PlayerPose"
+                },
+                "ground_proximity": {
+                    "type": "boolean"
+                },
+                "predicted_passive_next_tick_state": {
+                    "type": "object",
+                    "properties": {
+                        "predicted_pos": {
+                            "$ref": "#/$defs/Coordinates3D"
+                        },
+                        "predicted_vel": {
+                            "$ref": "#/$defs/Velocity3D"
+                        }
+                    },
+                    "required": [
+                        "predicted_pos",
+                        "predicted_vel"
+                    ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [
+                "position",
+                "velocity",
+                "look_direction",
+                "player_pose",
+                "ground_proximity",
+                "predicted_passive_next_tick_state"
+            ],
+            "additionalProperties": false
+        },
+        "BoundingBoxCoordinates": {
+            "type": "object",
+            "properties": {
+                "min_x": {
+                    "type": "number"
+                },
+                "min_y": {
+                    "type": "number"
+                },
+                "min_z": {
+                    "type": "number"
+                },
+                "max_x": {
+                    "type": "number"
+                },
+                "max_y": {
+                    "type": "number"
+                },
+                "max_z": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "min_x",
+                "min_y",
+                "min_z",
+                "max_x",
+                "max_y",
+                "max_z"
+            ],
+            "additionalProperties": false
+        },
+        "BoxDimensions": {
+            "type": "object",
+            "properties": {
+                "length": {
+                    "type": "number"
+                },
+                "width": {
+                    "type": "number"
+                },
+                "height": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "length",
+                "width",
+                "height"
+            ],
+            "additionalProperties": false
+        },
+        "TraversabilityData": {
+            "type": "string",
+            "enum": [
+                "SOLID_WALKABLE",
+                "FLUID",
+                "OBSTRUCTION",
+                "AIR",
+                "LIQUID_PLACEABLE",
+                "PLACEABLE_BLOCK",
+                "SOLID_SLIPPERY",
+                "NON_PHYSICAL",
+                "OTHER"
+            ]
+        },
+        "AreaSourceType": {
+            "type": "string",
+            "enum": [
+                "FIXED_RADIUS",
+                "DYNAMIC_INTEREST"
+            ]
+        },
+        "CollisionBox": {
+            "type": "object",
+            "properties": {
+                "bounding_box_coordinates": {
+                    "$ref": "#/$defs/BoundingBoxCoordinates"
+                },
+                "relative_position": {
+                    "$ref": "#/$defs/Coordinates3D"
+                },
+                "box_dimensions": {
+                    "$ref": "#/$defs/BoxDimensions"
+                },
+                "element_identifier": {
+                    "type": "string"
+                },
+                "area_source_type": {
+                    "$ref": "#/$defs/AreaSourceType"
+                }
+            },
+            "required": [
+                "bounding_box_coordinates",
+                "relative_position",
+                "box_dimensions",
+                "element_identifier",
+                "area_source_type"
+            ],
+            "additionalProperties": false
+        },
+        "HistoricalPlayerState": {
+            "type": "object",
+            "properties": {
+                "position": {
+                    "$ref": "#/$defs/Coordinates3D"
+                },
+                "velocity": {
+                    "$ref": "#/$defs/Velocity3D"
+                },
+                "look_direction": {
+                    "$ref": "#/$defs/LookDirection"
+                },
+                "player_pose": {
+                    "$ref": "#/$defs/PlayerPose"
+                },
+                "fall_distance": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "position",
+                "velocity",
+                "look_direction",
+                "player_pose",
+                "fall_distance"
+            ],
+            "additionalProperties": false
+        }
+    }
+}
