@@ -93,15 +93,7 @@ export interface CollisionBox {
     relative_position: Coordinates3D;
     box_dimensions: BoxDimensions;
     element_identifier: string;
-    traversability_data: TraversabilityData;
-    /**
-     * Additional, block-specific properties (e.g., direction of stairs, open/closed doors).
-     */
-    element_state_properties: {
-        [key: string]: any;
-    };
     area_source_type: AreaSourceType;
-    box_validity: boolean;
 }
 
 export interface HistoricalPlayerState {

@@ -5,7 +5,7 @@ import { BufferedWriter } from "jvm-types/java/io/BufferedWriter";
 import { ProcessBuilder } from "jvm-types/java/lang/ProcessBuilder";
 import { Process } from "jvm-types/java/lang/Process";
 import { OutputStream } from "jvm-types/java/io/OutputStream";
-import { VisualizationManager, fadeOutInterpolatorFrom, defaultRainbowInterpolator } from "../packages/lbng-utils-typed/src/visualization-utils";
+import { VisualizationManager, fadeOutInterpolatorFrom, defaultRainbowInterpolator } from "lbng-utils-typed/dist/visualization-utils";
 import { Color4b } from "jvm-types/net/ccbluex/liquidbounce/render/engine/type/Color4b";
 
 import { GameTickEvent } from "jvm-types/net/ccbluex/liquidbounce/event/events/GameTickEvent";
@@ -16,6 +16,7 @@ import { Vec3d } from "jvm-types/net/minecraft/util/math/Vec3d";
 
 import { BaritoneAPI } from "jvm-types/baritone/api/BaritoneAPI";
 import { IPath } from "jvm-types/baritone/api/pathing/calc/IPath";
+import { GoalBlock } from "jvm-types/baritone/api/pathing/goals/GoalBlock";
 import { PlayerInput } from "jvm-types/net/minecraft/util/PlayerInput";
 
 import {
@@ -38,6 +39,7 @@ import { BlockView } from "jvm-types/net/minecraft/world/BlockView";
 // @ts-expect-error
 import { HashSet } from "jvm-types/java/util/HashSet";
 import { Vec3i } from "jvm-types/net/minecraft/util/math/Vec3i";
+import { Goal } from "jvm-types/baritone/api/pathing/goals/Goal";
 
 const script = registerScript.apply({
     name: "data-collector",
@@ -45,13 +47,6 @@ const script = registerScript.apply({
     authors: ["Roo"]
 });
 
-let logWriter: BufferedWriter | null = null;
-let zstdProcess: Process | null = null;
-let collectedData: TickData[] = [];
-const HISTORY_SIZE = 40; // Last N ticks for historical player states
-const historicalPlayerStates: HistoricalPlayerState[] = [];
-let lastYaw: number | null = null;
-let lastPitch: number | null = null;
 
 // Helper to convert Minecraft Vec3d to Coordinates3D
 function toCoordinates3D(vec: Vec3d): Coordinates3D {
@@ -124,26 +119,37 @@ script.registerModule({
             range: [1, 32]
         }),
         goalX: Setting.float({
-            name: "Goal X",
+            name: "GoalX",
             default: 0,
             range: [-10000, 10000]
         }),
         goalY: Setting.float({
-            name: "Goal Y",
+            name: "GoalY",
             default: 0,
             range: [-10000, 10000]
         }),
         goalZ: Setting.float({
-            name: "Goal Z",
+            name: "GoalZ",
             default: 0,
             range: [-10000, 10000]
         }),
         visualizeBoxes: Setting.boolean({
             name: "Visualize Collected Boxes",
             default: false
+        }),
+        setBaritoneGoal: Setting.boolean({
+            name: "Set Baritone Goal",
+            default: false
         })
     }
 }, (mod) => {
+    let logWriter: BufferedWriter | null = null;
+    let zstdProcess: Process | null = null;
+    let collectedData: TickData[] = [];
+    const HISTORY_SIZE = 40; // Last N ticks for historical player states
+    const historicalPlayerStates: HistoricalPlayerState[] = [];
+    let lastYaw: number | null = null;
+    let lastPitch: number | null = null;
     let lastCollectionTick = 0;
 
     const visualizationManager = new VisualizationManager(mod);
@@ -166,6 +172,15 @@ script.registerModule({
             lastYaw = mc.player?.yaw ?? null;
             lastPitch = mc.player?.pitch ?? null;
             Client.displayChatMessage(`DataCollector enabled. Logging to ${logFileName}`);
+
+            if (mod.settings.setBaritoneGoal.get()) {
+                const goalX = mod.settings.goalX.get();
+                const goalY = mod.settings.goalY.get();
+                const goalZ = mod.settings.goalZ.get();
+                const baritone = BaritoneAPI.getProvider().getPrimaryBaritone();
+                baritone.getCustomGoalProcess().setGoalAndPath(new GoalBlock(goalX, goalY, goalZ));
+                Client.displayChatMessage(`[DataCollector] Baritone goal set to X:${goalX}, Y:${goalY}, Z:${goalZ}`);
+            }
 
         } catch (e) {
             Client.displayChatMessage(`[DataCollector] Failed to start zstd process or open log file: ${e}`);
@@ -202,6 +217,13 @@ script.registerModule({
         }
         if (visualizationManager) {
             visualizationManager.clearAllVisualizations();
+        }
+
+        // Clear Baritone goal on disable
+        if (mod.settings.setBaritoneGoal.get()) {
+            const baritone = BaritoneAPI.getProvider().getPrimaryBaritone();
+            baritone.getCustomGoalProcess().setGoalAndPath(null as unknown as Goal); // Clear the goal
+            Client.displayChatMessage(`[DataCollector] Baritone goal cleared.`);
         }
     });
 
@@ -279,10 +301,7 @@ script.registerModule({
                                     relative_position: relativePos,
                                     box_dimensions: calculateBoxDimensions(blockBox),
                                     element_identifier: blockState.getBlock().getName().getString(),
-                                    traversability_data: getTraversabilityData(blockState),
-                                    element_state_properties: {},
-                                    area_source_type: 'FIXED_RADIUS',
-                                    box_validity: true
+                                    area_source_type: 'FIXED_RADIUS'
                                 });
                             }
                         }
@@ -338,10 +357,7 @@ script.registerModule({
                             relative_position: relativePos,
                             box_dimensions: calculateBoxDimensions(blockBox),
                             element_identifier: blockState.getBlock().getName().getString(),
-                            traversability_data: getTraversabilityData(blockState),
-                            element_state_properties: {},
-                            area_source_type: 'DYNAMIC_INTEREST',
-                            box_validity: true
+                            area_source_type: 'DYNAMIC_INTEREST'
                         };
                         dynamicInterestScan.push(collisionBox);
                     }

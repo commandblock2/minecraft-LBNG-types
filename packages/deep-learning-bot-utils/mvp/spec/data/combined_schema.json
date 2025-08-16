@@ -248,19 +248,8 @@
                 "element_identifier": {
                     "type": "string"
                 },
-                "traversability_data": {
-                    "$ref": "#/$defs/TraversabilityData"
-                },
-                "element_state_properties": {
-                    "type": "object",
-                    "description": "Additional, block-specific properties (e.g., direction of stairs, open/closed doors).",
-                    "additionalProperties": true
-                },
                 "area_source_type": {
                     "$ref": "#/$defs/AreaSourceType"
-                },
-                "box_validity": {
-                    "type": "boolean"
                 }
             },
             "required": [
@@ -268,10 +257,7 @@
                 "relative_position",
                 "box_dimensions",
                 "element_identifier",
-                "traversability_data",
-                "element_state_properties",
-                "area_source_type",
-                "box_validity"
+                "area_source_type"
             ],
             "additionalProperties": false
         },

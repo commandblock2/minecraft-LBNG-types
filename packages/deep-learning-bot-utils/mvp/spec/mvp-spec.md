@@ -20,13 +20,9 @@ The bot will receive observations structured similarly to `SPEC-DATA`'s Phase 1,
         *   `Relative Position` (center point relative to player).
         *   `Box Dimensions`.
         *   `Element Identifier` (e.g., `minecraft:stone`).
-        *   `Traversability Data` (e.g., `SOLID_WALKABLE`, `FLUID`, `OBSTRUCTION`, `AIR`, `LIQUID_PLACEABLE`, `PLACEABLE_BLOCK`, `OTHER`).
-        *   `Element State Properties` (e.g., `directionality of stairs`).
         *   **CRITICAL RE-INTERPRETATION:** `Area Source Type`:
             *   `FIXED_RADIUS` - Collision box within fixed scanning radius around player. (however could done sophisticatedly by using a bfs like algorithm, to only "raytrace" the surface visible blocks)
             *   `DYNAMIC_INTEREST` - **Collision box included because it is within a small radius of *any* block on Baritone's current *planned path*. This effectively highlights the path and its immediate surroundings for the agent.**
-        *   `Box Validity`.
-    *   **Note:** The agent will interpret `Traversability Data` as properties of the environment.
 
 **Exclusions for MVP:**
 *   `Simplified Inventory Snapshot`.
@@ -90,20 +86,19 @@ The bot will receive observations structured similarly to `SPEC-DATA`'s Phase 1,
 
 ### 4. Training Process: Two-Stage Approach
 
-This MVP implements a two-stage training regimen for robustness and efficient learning.
+This MVP implements a two-stage training regimen for robustness and efficient learning, leveraging procedurally generated scenarios for scalability.
 
 #### **Stage 1: Imitation Learning (IL) for Path Execution**
 
-*   **Objective:** Train the agent to mimic the basic locomotion and path following demonstrated by Baritone. This provides a strong behavioral prior.
+*   **Objective:** Train the agent to mimic the basic locomotion and path following demonstrated by Baritone. This provides a strong behavioral prior, teaching the agent how to interpret observations and produce appropriate motor commands.
 *   **Data Collection:**
-    *   Run Minecraft with Baritone enabled.
-    *   Script Baritone to navigate a wide variety of "simple parkour" scenarios (flat ground walking, single-block jumps, stair climbing, short falls, corner turns, simple obstacle avoidance where Baritone paths around).
-    *   At each game tick, record
-assistant
-:
+    *   Utilize a **scenario generation module** (e.g., within LiquidBounce or an external tool) to continuously create diverse, procedurally generated parkour challenges. These challenges should be guaranteed to be solvable by Baritone.
+    *   Examples include: varying lengths of flat ground, single/multi-block jumps, stair climbing, short falls, various turns, and simple obstacle avoidance (where Baritone paths around).
+    *   Run multiple Minecraft instances in parallel, each continuously generating and navigating new scenarios.
+    *   At each game tick, record:
         *   The full `Input Data Schema` (observation) as seen by the bot.
         *   The *action Baritone outputs* to achieve its movement for that tick (e.g., `move_forward`, `jump`). This requires introspection into Baritone's movement commands.
-    *   Collect a diverse dataset of `(Observation, Baritone_Action)` pairs.
+    *   Collect a large, diverse dataset of `(Observation, Baritone_Action)` pairs across many generated scenarios.
 *   **Training Method:** Supervised Learning.
     *   The agent's Policy Head is trained directly to predict Baritone's action given an observation.
     *   Loss function: Cross-entropy between predicted action probabilities and Baritone's action.
@@ -111,44 +106,67 @@ assistant
 
 #### **Stage 2: Reinforcement Learning (RL) for Refinement and Robustness**
 
-*   **Objective:** Refine the agent's policy to handle environmental uncertainties, optimize paths (even subtle ones not explicitly planned by Baritone at the micro-level), and recover from minor deviations.
+*   **Objective:** Refine the agent's policy to handle environmental uncertainties, optimize paths (even subtle ones not explicitly planned by Baritone at the micro-level), recover from minor deviations, and achieve more generalized and efficient navigation.
 *   **Algorithm:** Proximal Policy Optimization (PPO) or Advantage Actor-Critic (A2C).
 *   **Initialization:** The agent's neural network weights are initialized with those learned from Stage 1 (Imitation Learning).
-*   **Environment:** Minecraft with client-side API, more specifically through LiquidBounce script api with typescript support. Baritone runs concurrently to provide its path, influencing the `DYNAMIC_INTEREST` flags in the observations.
+*   **Environment:** Minecraft with client-side API, specifically through LiquidBounce script API with TypeScript support. Baritone runs concurrently to provide its path, influencing the `DYNAMIC_INTEREST` flags in the observations.
 *   **Reward Function:**
     *   **Goal Progress:** Reward for reducing Euclidean distance to the *current nearest block on Baritone's planned path*. Larger reward for reaching the ultimate target destination (Baritone's goal).
     *   **Path Adherence:** Small positive reward for being within a certain radius of Baritone's current path segment, and for maintaining a "forward" orientation along the path.
-    *   **Efficiency:** Small negative reward per timestep.
+    *   **Efficiency:** Small negative reward per timestep to encourage faster completion.
     *   **Penalties:** Significant negative reward for:
         *   Falling into hazardous blocks (lava, deep water without path).
         *   Taking significant damage.
         *   Getting "stuck" (no progress towards Baritone path for X ticks).
         *   Moving significantly *off* Baritone's path (based on a threshold distance from the path).
 *   **Training Episodes:**
-    *   Focus on generating training data from specific, procedurally generated parkour challenges, potentially slightly more complex than in Stage 1, that highlight different `Traversability Data` types.
+    *   **Procedural Generation:** Continue using the scenario generation module from Stage 1, but now for live RL interaction.
+    *   **Curriculum Learning:** Implement a curriculum where scenarios gradually increase in complexity. Start with simpler paths (e.g., flat ground, single jumps) and progressively introduce more challenging elements (e.g., longer jumps, more complex turns, varying verticality, basic weaving challenges). This helps prevent the agent from getting stuck in local optima early in training.
     *   Manage episode length.
 *   **Observation Frequency:** every 1 game tick.
 
-### 5. Scenarios (Reduced Complexity)
+---
 
-Testing should focus on fundamental parkour movements that Baritone can inherently plan.
+### 5. Scenario Generation
 
-*   **Scenario 1: Simple Walk:** Flat ground, agent needs to reach a target block. (Verifies basic movement, Baritone integration).
-*   **Scenario 2: Single Block Jump:** Agent needs to jump over a 1-block gap. (Verifies "jump" action, correct timing based on target waypoint).
-*   **Scenario 3: Up a Staircase/Slab Stack:** Agent navigates a small vertical ascent. (Verifies vertical movement, Baritone providing correct segment).
-*   **Scenario 4: Around a Corner:** Agent needs to turn. (Verifies turning/directional control).
-*   **Scenario 5: Simple Obstacle Avoidance (Baritone-driven):** A single 1-block high wall that Baritone would path around. The RL agent just needs to follow Baritone's "around" path.
-*   **Scenario 6: Fall:** Agent needs to fall safely from a ledge. (Verifies handling of negative Y movement).
+Training will rely heavily on procedurally generating diverse and solvable navigation challenges for the bot. This allows for scalable data collection and robust policy learning.
 
-**Extended for MVP:**
-*   Complex parkour (e.g., neo/quad jumps, precise momentum jumps).
-*   Complex obstacle avoidance.
+**Goals of Scenario Generation:**
 
+*   **High Diversity:** Provide a wide variety of environmental configurations to enhance agent generalization.
+*   **Scalability:** Enable continuous, parallel data collection/training across multiple Minecraft instances.
+*   **Controlled Complexity:** Introduce challenges incrementally, supporting curriculum learning.
+*   **Guaranteed Solvability:** Ensure that Baritone can always find a path to the end target, providing reliable "expert" demonstrations for IL and clear goals for RL.
 
-### 5. Evaluation Metrics
+**Categories of Generated Scenarios:**
 
-(No changes from previous revision.)
+*   **Basic Pathing:** Straight lines, simple turns, varying path widths (1-block, 2-block).
+*   **Vertical Mobility:** Single block ascents/descents (stairs, slabs), multi-block climbs, small controlled falls.
+*   **Gap Navigation:** Single-block jumps, multi-block jumps (requiring sprinting), precise landing challenges.
+*   **Controlled Obstacles:** Paths requiring weaving around 1-block obstacles, simple over-under sections.
+*   **Combinatorial:** Scenarios that combine multiple elements (e.g., jump onto a narrow path, turn, then climb stairs).
+
+**Generation Mechanisms:**
+
+*   **Rule-Based/Grammar-Based:** Define a set of rules or a simple grammar that dictates how path segments and obstacles are placed. This allows for controlled variation with parameters (e.g., jump distance, turn radius, obstacle density).
+*   **Randomized Parameters:** Introduce randomness in various parameters within the rules (e.g., path length, number of turns, height changes) to ensure unpredictability.
+*   **In-Game Module:** A dedicated LiquidBounce script module will be responsible for:
+    1.  Clearing the active play area around the player.
+    2.  Constructing a new procedural path and/or environment.
+    3.  Setting Baritone's goal to the end of the newly generated path.
+    4.  Monitoring Baritone's success/failure for the current scenario.
+    5.  Triggering a new generation cycle upon completion or failure.
+    *   **Constraint:** Ensure generated paths are concise (e.g., under 50 blocks) and keep the total number of relevant collision boxes low (e.g., under 200) to respect data collector's performance limitations.
+
+**Curriculum Learning Integration:**
+
+*   The scenario generator will support a difficulty parameter. Training will begin with lower difficulty settings (e.g., mostly flat paths, simple jumps) and gradually increase this parameter as the agent's performance improves. This guides the learning process from simple tasks to more complex ones.
+
+---
+
+### 6. Evaluation Metrics
+
 *   Success Rate: Percentage of episodes where the agent reaches the Baritone final destination.
 *   Path Following Error: Average deviation from Baritone's planned path.
 *   Efficiency: Steps/time taken to complete tasks.
-*   Robustness: Performance across different Baritone-solvable challenging parkour scenarios. This could include scenarios with minor environmental perturbations (e.g., a single block moved) that Baritone would re-path around, and the agent should adapt.
+*   Robustness: Performance across diverse, never-before-seen generated parkour scenarios from different complexity levels. This could include scenarios with minor environmental perturbations that Baritone would re-path around, and the agent should adapt.

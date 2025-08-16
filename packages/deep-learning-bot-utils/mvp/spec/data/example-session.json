@@ -53,10 +53,7 @@
                     "height": 1.0
                 },
                 "element_identifier": "minecraft:stone",
-                "traversability_data": "SOLID_WALKABLE",
-                "element_state_properties": {},
-                "area_source_type": "FIXED_RADIUS",
-                "box_validity": true
+                "area_source_type": "FIXED_RADIUS"
             }
         ],
         "historical_player_states": [
@@ -169,10 +166,7 @@
                     "height": 1.0
                 },
                 "element_identifier": "minecraft:grass_block",
-                "traversability_data": "SOLID_WALKABLE",
-                "element_state_properties": {},
-                "area_source_type": "DYNAMIC_INTEREST",
-                "box_validity": true
+                "area_source_type": "DYNAMIC_INTEREST"
             }
         ],
         "historical_player_states": [
