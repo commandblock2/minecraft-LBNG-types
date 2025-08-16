@@ -25,6 +25,11 @@ import { BaritoneAPI } from "jvm-types/baritone/api/BaritoneAPI";
 import { IPath } from "jvm-types/baritone/api/pathing/calc/IPath";
 import { GoalBlock } from "jvm-types/baritone/api/pathing/goals/GoalBlock";
 import { PlayerInput } from "jvm-types/net/minecraft/util/PlayerInput";
+import { BetterBlockPos } from "jvm-types/baritone/api/utils/BetterBlockPos";
+import { AStarPathFinder } from "jvm-types/baritone/pathing/calc/AStarPathFinder";
+import { Favoring } from "jvm-types/baritone/utils/pathing/Favoring";
+import { CalculationContext } from "jvm-types/baritone/pathing/movement/CalculationContext";
+import { PathCalculationResult$Type } from "jvm-types/baritone/api/utils/PathCalculationResult$Type";
 
 import {
     CombinedInputAndOutputDataSchema,
@@ -172,7 +177,14 @@ script.registerModule({
 
     const visualizationManager = new VisualizationManager(mod);
     let tickCounter = 0;
+    // Internal tick counter that is stable across player deaths/world changes.
+    // mc.player.age resets when the player dies or changes world; use this counter
+    // to represent monotonically increasing gameticks while this module is enabled.
+    let internalTick = 0;
     let prevPath: IPath | null = null;
+    let latestComputedPath: IPath | null = null;
+    let lastAStarTick = 0;
+    const ASTAR_RECALC_INTERVAL = 20;
     // let dynamicInterestScan: CollisionBox[] = [];
     let dynamicInterestBlockSet: HashSet<Vec3i> = new HashSet();
 
@@ -378,10 +390,12 @@ script.registerModule({
 
         // Data collection logic (only if not launching custom inference process, or if you want to log both)
         if (processWriter) {
-            if ((mc.player.age - lastCollectionTick) < (mod.settings.collectionInterval.get() as unknown as number)) {
+            // increment our internal tick counter for each processed gametick when player/world are available
+            internalTick++;
+            if ((internalTick - lastCollectionTick) < (mod.settings.collectionInterval.get() as unknown as number)) {
                 return;
             }
-            lastCollectionTick = mc.player.age;
+            lastCollectionTick = internalTick;
 
             try {
                 // 1. Player State
@@ -455,30 +469,70 @@ script.registerModule({
                     }
                 }
 
-                // Collect DYNAMIC_INTEREST blocks along Baritone's path with expansion
-                const baritone = BaritoneAPI.getProvider().getPrimaryBaritone();
-                // @ts-expect-error
-                const currentPath: IPath | null = baritone.getPathingBehavior().getPath().orElseGet(() => null);
-
-
-
-                if (currentPath && currentPath != prevPath) {
+                // Collect DYNAMIC_INTEREST blocks along a path.
+                // When a custom inference process is launched (online inference mode), we compute an A* path
+                // asynchronously and use it as the source of dynamic interest blocks. Otherwise fall back to
+                // Baritone's current path.
+                let computedPath: IPath | null = null;
+                if (mod.settings.launchCustomInferenceProcess.get()) {
+                    // Periodically schedule an asynchronous A* path calculation so we don't block the client thread.
+                    if ((internalTick - lastAStarTick) >= ASTAR_RECALC_INTERVAL) {
+                        lastAStarTick = internalTick;
+                        try {
+                            const baritone = BaritoneAPI.getProvider().getPrimaryBaritone();
+                            const playerPos = baritone.getPlayerContext().playerFeet();
+                            const start = new BetterBlockPos(playerPos.getX(), playerPos.getY(), playerPos.getZ());
+                            const context = new CalculationContext(baritone, true);
+                            const favoring = new Favoring(baritone.getPlayerContext(), prevPath as unknown as IPath, context);
+                            const goal = new GoalBlock(mod.settings.goalX.get(), mod.settings.goalY.get(), mod.settings.goalZ.get());
+                            const pathfinder = new AStarPathFinder(
+                                start,
+                                start.getX(),
+                                start.getY(),
+                                start.getZ(),
+                                goal,
+                                favoring,
+                                context
+                            );
+                            // @ts-expect-error
+                            UnsafeThread.run(() => {
+                                const result = pathfinder.calculate(Primitives.long(2000), Primitives.long(5000));
+                                if (result.getType() != PathCalculationResult$Type.CANCELLATION) {
+                                    const path = result.getPath().get();
+                                    mc.execute(() => {
+                                        // Store latest computed path for this gametick handler to pick up
+                                        latestComputedPath = path;
+                                    });
+                                }
+                            });
+                        } catch (e) {
+                            console.error(e);
+                        }
+                    }
+                    computedPath = latestComputedPath;
+                } else {
+                    const baritone = BaritoneAPI.getProvider().getPrimaryBaritone();
+                    // @ts-expect-error
+                    computedPath = baritone.getPathingBehavior().getPath().orElseGet(() => null);
+                }
+ 
+                if (computedPath && computedPath != prevPath) {
                     dynamicInterestBlockSet = new HashSet();
-                    prevPath = currentPath;
-                    const pathPositions = currentPath.positions();
+                    prevPath = computedPath;
+                    const pathPositions = computedPath.positions();
                     const horizontalExpand = 1;
                     const downwardExpand = 1;
                     const upwardExpand = 2;
-
+ 
                     for (const pathBlock of pathPositions) {
                         for (let x = -horizontalExpand; x <= horizontalExpand; x++) {
                             for (let y = -downwardExpand; y <= upwardExpand; y++) {
                                 for (let z = -horizontalExpand; z <= horizontalExpand; z++) {
                                     const blockPos = new BlockPos(pathBlock.getX() + x, pathBlock.getY() + y, pathBlock.getZ() + z);
                                     if (dynamicInterestBlockSet.contains(blockPos))
-                                        continue
+                                        continue;
                                     else
-                                        dynamicInterestBlockSet.add(blockPos)
+                                        dynamicInterestBlockSet.add(blockPos);
                                 }
                             }
                         }
@@ -568,7 +622,8 @@ script.registerModule({
 
 
                 const tickData: TickData = {
-                    tick_id: mc.player.age,
+                    // Use our internal tick counter instead of mc.player.age to avoid resets when player dies/changes world.
+                    tick_id: internalTick,
                     timestamp_ms: Date.now(),
                     player_state: playerState,
                     local_environment_scan: localEnvironmentScan,
