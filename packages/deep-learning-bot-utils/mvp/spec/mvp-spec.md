@@ -150,17 +150,44 @@ Training will rely heavily on procedurally generating diverse and solvable navig
 
 *   **Rule-Based/Grammar-Based:** Define a set of rules or a simple grammar that dictates how path segments and obstacles are placed. This allows for controlled variation with parameters (e.g., jump distance, turn radius, obstacle density).
 *   **Randomized Parameters:** Introduce randomness in various parameters within the rules (e.g., path length, number of turns, height changes) to ensure unpredictability.
+*   **Verb-based / Verb-Sequence Generator (NEW):** To make generation expressive and easier to control/curriculum, the generator will produce a short sequence of high-level "verbs" (actions) — a small domain-specific language — and then render the world layout from that sequence. This maps directly to human-describable scenario patterns and is convenient for controlled curriculum and logging.
+    *   Vocabulary (example):
+        *   WALK(n) — advance n steps on flat ground
+        *   TURN(direction) — change heading (LEFT / RIGHT)
+        *   GAP(n) — create a gap of n blocks in the forward direction (Baritone-solvable constraint: n ≤ 3 for this MVP)
+        *   JUMP_TO(h) — place a single-step up of height h (usually h = 1)
+        *   CLIMB(n) — create an ascending run of n steps (stairs)
+        *   DESCEND(n) — create a descending run of n steps
+        *   OBSTACLE(density) — place small single-block obstacles in the path with given density
+        *   NARROW(n) — force path width to n (1 or 2)
+    *   Example grammar / short program example:
+        *   [WALK(3), GAP(1), WALK(2), TURN(RIGHT), WALK(4), CLIMB(2), GAP(2), WALK(3)]
+    *   Generation algorithm:
+        1.  Sample a difficulty (curriculum) parameter that bounds choices (max gap, rate of turns, verticality).
+        2.  Sample a sequence length L (e.g., 6–20 primitives depending on difficulty).
+        3.  Generate a verb sequence using weighted random choices from the vocabulary constrained by difficulty (e.g., at low difficulty, GAP probabilities are small and max gap = 1).
+        4.  Render the verb sequence into world coordinates starting from player's current block and facing. The renderer lays out blocks, gaps, stairs, obstacles accordingly.
+        5.  After rendering, set the Baritone goal to the final block of the rendered path and verify that Baritone can compute a path. If Baritone fails or computes an invalid path (e.g., due to a too-large gap), the generator should either (a) reduce the offending primitives and re-render, or (b) re-sample the verb sequence until a solvable one is produced. For MVP we prefer (b) with a bounded number of retries.
+    *   Implementation notes:
+        *   Keep path length concise (under 50 blocks).
+        *   Ensure the verb renderer produces collision boxes count under the DataCollector performance budget (e.g., < 200).
+        *   Enforce Baritone solvability constraint: maximum GAP ≤ 3 (Baritone can at most jump a 3-block gap in this environment).
+        *   Expose the generated verb program alongside the world layout in the scenario metadata so training logs can replay or analyze the high-level structure of scenarios.
 *   **In-Game Module:** A dedicated LiquidBounce script module will be responsible for:
-    1.  Clearing the active play area around the player.
-    2.  Constructing a new procedural path and/or environment.
-    3.  Setting Baritone's goal to the end of the newly generated path.
-    4.  Monitoring Baritone's success/failure for the current scenario.
-    5.  Triggering a new generation cycle upon completion or failure.
+    1.  Clearing the active play area around the player (keep the block under the player).
+    2.  Translating a generated verb-sequence program into a concrete world layout and placing the necessary blocks/gaps/obstacles.
+    3.  Setting Baritone's goal to the end of the newly generated path (DataCollector and other modules should be configured to point to the same goal).
+    4.  Monitoring Baritone's success/failure for the current scenario and marking the episode accordingly.
+    5.  Triggering a new generation cycle upon completion or failure (with optional difficulty adjustment for curriculum).
     *   **Constraint:** Ensure generated paths are concise (e.g., under 50 blocks) and keep the total number of relevant collision boxes low (e.g., under 200) to respect data collector's performance limitations.
 
 **Curriculum Learning Integration:**
 
-*   The scenario generator will support a difficulty parameter. Training will begin with lower difficulty settings (e.g., mostly flat paths, simple jumps) and gradually increase this parameter as the agent's performance improves. This guides the learning process from simple tasks to more complex ones.
+*   The verb-sequence generator exposes a difficulty parameter that constrains sampling distributions:
+    *   Low difficulty: mostly WALK, occasional 1-block GAP, few turns, limited vertical changes.
+    *   Medium difficulty: more frequent turns, GAP up to 2, small climbs/descents, occasional obstacles.
+    *   High difficulty: GAP up to 3, more verticality and turns, denser obstacles and narrow segments.
+*   Difficulty can be adapted online using agent performance statistics (success rate, time-to-goal).
 
 ---
 
