@@ -30,7 +30,9 @@ function generateRandomBaritoneAction() {
 process.stdin.on('data', function (chunk) {
     // We don't actually process the input chunk, just respond with a random action
     var randomAction = generateRandomBaritoneAction();
-    process.stdout.write(JSON.stringify(randomAction) + '\n');
+    const out = JSON.stringify(randomAction) + '\n'
+    process.stdout.write(out);
+    process.stderr.write(out);
 });
 process.stdin.on('end', function () {
     process.stderr.write('Input stream closed.\n');

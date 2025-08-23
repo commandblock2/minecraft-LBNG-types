@@ -168,6 +168,7 @@ script.registerModule({
     let processWriter: BufferedWriter | null = null;
     let externalProcess: Process | null = null;
     let processReader: BufferedReader | null = null; // New BufferedReader for process stdout
+    let processErrorReader: BufferedReader | null = null; // New BufferedReader for process stderr
     let collectedData: TickData[] = [];
     const HISTORY_SIZE = 40; // Last N ticks for historical player states
     const historicalPlayerStates: HistoricalPlayerState[] = [];
@@ -198,6 +199,8 @@ script.registerModule({
                     externalProcess = customProcessBuilder.start();
                     // Initialize BufferedReader for stdout
                     processReader = new BufferedReader(new InputStreamReader(externalProcess.getInputStream()));
+                    // Initialize BufferedReader for stderr
+                    processErrorReader = new BufferedReader(new InputStreamReader(externalProcess.getErrorStream()));
                     // Initialize processWriter for stdin of the inference engine
                     // @ts-expect-error
                     processWriter = new BufferedWriter(new OutputStreamWriter(externalProcess.getOutputStream()));
@@ -235,6 +238,7 @@ script.registerModule({
             processWriter = null;
             externalProcess = null;
             processReader = null; // Ensure reader is nullified on error
+            processErrorReader = null; // Ensure stderr reader is nullified on error
         }
     });
 
@@ -266,6 +270,14 @@ script.registerModule({
                 Client.displayChatMessage(`[DataCollector] Failed to close process reader: ${e}`);
             }
             processReader = null;
+        }
+        if (processErrorReader) {
+            try {
+                processErrorReader.close();
+            } catch (e) {
+                Client.displayChatMessage(`[DataCollector] Failed to close process stderr reader: ${e}`);
+            }
+            processErrorReader = null;
         }
     
         if (externalProcess) {
@@ -333,7 +345,7 @@ script.registerModule({
                                     null
                                 );
                             }
-
+    
                             let currentForward = mc.player.input.playerInput.forward();
                             let currentBackward = mc.player.input.playerInput.backward();
                             let currentLeft = mc.player.input.playerInput.left();
@@ -341,13 +353,13 @@ script.registerModule({
                             let currentJump = mc.player.input.playerInput.jump();
                             let currentSneak = mc.player.input.playerInput.sneak();
                             let currentSprint = mc.player.input.playerInput.sprint();
-
+    
                             if (inferenceOutput.move_direction) {
                                 currentForward = false;
                                 currentBackward = false;
                                 currentLeft = false;
                                 currentRight = false;
-
+    
                                 switch (inferenceOutput.move_direction) {
                                     case 'FORWARD': currentForward = true; break;
                                     case 'BACKWARD': currentBackward = true; break;
@@ -359,7 +371,7 @@ script.registerModule({
                                     case 'BACKWARD_RIGHT': currentBackward = true; currentRight = true; break;
                                 }
                             }
-
+    
                             if (inferenceOutput.jump !== undefined && mc.player.onGround) {
                                 currentJump = inferenceOutput.jump;
                             }
@@ -369,7 +381,7 @@ script.registerModule({
                             if (inferenceOutput.sprint !== undefined) {
                                 currentSprint = inferenceOutput.sprint;
                             }
-
+    
                             // Reconstruct PlayerInput
                             event.jump = currentJump;
                             event.sneak = currentSneak;
@@ -379,9 +391,9 @@ script.registerModule({
                                 currentLeft,
                                 currentRight
                             );
-
+    
                             // mc.player.setSprinting(currentSprint)
-
+    
                         } catch (parseError) {
                             Client.displayChatMessage(`[DataCollector] Error parsing inference output: ${parseError} - Line: ${line}`);
                             console.error(parseError);
@@ -391,6 +403,22 @@ script.registerModule({
             } catch (readError) {
                 Client.displayChatMessage(`[DataCollector] Error reading from inference process stdout: ${readError}`);
                 console.error(readError);
+            }
+    
+            // Also read and forward stderr from the process to the client
+            if (processErrorReader) {
+                try {
+                    while (processErrorReader.ready()) {
+                        const errLine = processErrorReader.readLine();
+                        if (errLine) {
+                            Client.displayChatMessage(`[DataCollector][stderr] ${errLine}`);
+                            console.error(errLine);
+                        }
+                    }
+                } catch (errRead) {
+                    Client.displayChatMessage(`[DataCollector] Error reading from inference process stderr: ${errRead}`);
+                    console.error(errRead);
+                }
             }
         }
 
