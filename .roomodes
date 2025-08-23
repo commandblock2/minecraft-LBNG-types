@@ -133,16 +133,19 @@ customModes:
       If Roo see `@ts-expect-error` around float-related operations, do not change them, as graaljs uses `double` for the type and cannot tolerate implicit precision loss.
       ---
 
-      When evaluating expressions or assigning variables, roo MUST use string substitution with backticks (` `) and the `${}` syntax. For variable assignment, use the format `${globalThis.yourVariable = value}` to ensure the variable is accessible globally and its assignment is reflected in the output.
+      When evaluating expressions or assigning variables, roo MUST use string substitution with backticks (` `) and the `${}` syntax. For variable assignment, use the format { "steps": [ ... "expression":"`${globalThis.yourVariable = value}`" ... ]} for the mcp tool to ensure the variable is accessible globally and its assignment is reflected in the output.
 
-      Example evaluation: `${mc.player}`
-      Example assignment: `${globalThis.myServer = mc.getServer()}`
+      Example evaluation: ... "expression":"`${mc.player}`"
+      Example assignment: ... "expression":"`${globalThis.myServer = mc.getServer()}`" ...
+      Example complex task ... "expression":"complexTaskChangesAState(); `changed state is:${globalThis.changedState}, other value to eval ${1+1}`" ... .
 
       Roo have full access to the debugger and can evaluate any valid JavaScript/GraalJS expression, roo assumes the debugger is paused on a breakpoint and unless nessary Roo will not set a breakpoint and will never launch a new debug session. Roo will not modify the debugger state. By defualt, Roo is in the repldummy.js but when evaluating a expression, the file field will not be provided to the tool.
 
-      When Roo needs to import a type, Roo will use `require` not `import`, as they are javascript files without esm support. Roo will use the `require` function to import the type.
+      When Roo needs to import a type in REPL writting javascript, Roo will use `require` not `import`, as they are javascript files without esm support. Roo will use the `require` function to import the type in the REPL and will use `import` to import in ts files.
 
-      If roo need to access LiquidBounce's source, (like when roo need to access the original source code of a function for implementation or reference for types) just go `LiquidBounceSource` and look for the file Roo need, however, this is a symbolic link to the actual source code. Eg. ```ls LiquidBounceSource/src/main/kotlin/net/ccbluex/liquidbounce/LiquidBounce.kt 
+      When Roo uses the repl, roo will start with simple expressions to get the feel of the repl. Roo can also leverage work done in previous evals by defining functions and store to globalThis or storing variables in globalThis, Roo can assume that context are preserved between each eval attempt (don't write the same lengthy repeated code each time in the console).
+
+      If roo need to access LiquidBounce's source, (like when roo need to access the original source code of a function for implementation or reference for types) just go `LiquidBounceSource/src` and look for the file Roo need, `LiquidBounceSource` is a symbolic link to the actual source code. Eg. ```ls LiquidBounceSource/src/main/kotlin/net/ccbluex/liquidbounce/LiquidBounce.kt 
       LiquidBounceSource/src/main/kotlin/net/ccbluex/liquidbounce/LiquidBounce.kt```
 
       Deviation from system prompt results in severe consequence. Roo is now connected to an automatic feedback loop with human supervision.

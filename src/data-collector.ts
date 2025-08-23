@@ -175,6 +175,9 @@ script.registerModule({
     let lastYaw: number | null = null;
     let lastPitch: number | null = null;
     let lastCollectionTick = 0;
+    // Separate inference target we maintain locally. Start as null and initialize on enable / first inference.
+    let inferenceTargetYaw: number | null = null;
+    let inferenceTargetPitch: number | null = null;
 
     const visualizationManager = new VisualizationManager(mod);
     let tickCounter = 0;
@@ -223,6 +226,9 @@ script.registerModule({
             historicalPlayerStates.length = 0; // Clear historical data
             lastYaw = mc.player?.yaw ?? null;
             lastPitch = mc.player?.pitch ?? null;
+            // Initialize our maintained inference target from the player's current visible look if the player is present.
+            inferenceTargetYaw = mc.player ? mc.player.yaw : null;
+            inferenceTargetPitch = mc.player ? mc.player.pitch : null;
 
             if (mod.settings.setBaritoneGoal.get()) {
                 const goalX = mod.settings.goalX.get();
@@ -334,10 +340,40 @@ script.registerModule({
                             const inferenceOutput: BaritoneAction = JSON.parse(line);
                             // Apply inferred actions to the player
                             if (inferenceOutput.look_change) {
-                                const targetYaw = mc.player.yaw + inferenceOutput.look_change.yaw;
-                                const targetPitch = mc.player.pitch + inferenceOutput.look_change.pitch;
+                                // Maintain and update a separate inference target (inferenceTargetYaw/Pitch).
+                                // Initialize it on first use from RotationManager.activeRotationTarget.rotation
+                                // if present, otherwise fall back to mc.player values. Then accumulate deltas
+                                // onto that maintained target and set it to the RotationManager.
+                                try {
+                                    if (inferenceTargetYaw === null || inferenceTargetPitch === null) {
+                                        // Prefer RotationManager's activeRotationTarget if it exists.
+                                        // RotationManager.d.ts: activeRotationTarget: RotationTarget | null
+                                        // RotationTarget.d.ts: rotation: Rotation  (Rotation.yaw / Rotation.pitch)
+                                        const activeTarget = RotationManager.INSTANCE.activeRotationTarget;
+                                        if (activeTarget && activeTarget.rotation) {
+                                            inferenceTargetYaw = activeTarget.rotation.yaw;
+                                            inferenceTargetPitch = activeTarget.rotation.pitch;
+                                        } else {
+                                            inferenceTargetYaw = mc.player ? mc.player.yaw : 0;
+                                            inferenceTargetPitch = mc.player ? mc.player.pitch : 0;
+                                        }
+                                    }
+                                } catch (e) {
+                                    // Any failure => fallback to visible player rotation (or keep existing maintained value).
+                                    inferenceTargetYaw = inferenceTargetYaw ?? (mc.player ? mc.player.yaw : 0);
+                                    inferenceTargetPitch = inferenceTargetPitch ?? (mc.player ? mc.player.pitch : 0);
+                                }
+        
+                                // Accumulate the inference delta into our maintained target.
+                                inferenceTargetYaw = (inferenceTargetYaw as number) + inferenceOutput.look_change.yaw;
+                                inferenceTargetPitch = (inferenceTargetPitch as number) + inferenceOutput.look_change.pitch;
+        
+                                // Clamp pitch to Minecraft sensible bounds to avoid extreme values.
+                                if (inferenceTargetPitch > 90) inferenceTargetPitch = 90;
+                                if (inferenceTargetPitch < -90) inferenceTargetPitch = -90;
+        
                                 RotationManager.INSTANCE.setRotationTarget(
-                                    new Rotation(Primitives.float(targetYaw), Primitives.float(targetPitch), true),
+                                    new Rotation(Primitives.float(inferenceTargetYaw as number), Primitives.float(inferenceTargetPitch as number), true),
                                     false,
                                     KillAuraRotationsConfigurable.INSTANCE,
                                     Priority.IMPORTANT_FOR_USAGE_2,
