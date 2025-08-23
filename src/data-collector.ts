@@ -258,7 +258,7 @@ script.registerModule({
             }
             processWriter = null;
         }
-
+    
         if (processReader) {
             try {
                 processReader.close();
@@ -267,7 +267,7 @@ script.registerModule({
             }
             processReader = null;
         }
-
+    
         if (externalProcess) {
             try {
                 const exitCode = externalProcess.waitFor();
@@ -278,11 +278,25 @@ script.registerModule({
             externalProcess.destroy(); // Ensure process is terminated
             externalProcess = null;
         }
-
+    
         if (visualizationManager) {
             visualizationManager.clearAllVisualizations();
         }
-
+    
+        // Clear retained caches and path references so GC can reclaim memory
+        try {
+            if (dynamicInterestBlockSet) {
+                try {
+                    dynamicInterestBlockSet.clear();
+                } catch (e) { /* ignore */ }
+                dynamicInterestBlockSet = new HashSet();
+            }
+        } catch (e) { /* ignore */ }
+    
+        // Drop cached path references so large path graphs can be GC'd
+        latestComputedPath = null;
+        prevPath = null;
+    
         // Clear Baritone goal on disable
         if (mod.settings.setBaritoneGoal.get()) {
             const baritone = BaritoneAPI.getProvider().getPrimaryBaritone();
@@ -441,30 +455,27 @@ script.registerModule({
                 const scanRadius = mod.settings.scanRadius.get() as unknown as number;
 
                 // Collect FIXED_RADIUS blocks
-                for (let x = -scanRadius; x <= scanRadius; x++) {
-                    for (let y = -scanRadius; y <= scanRadius; y++) {
-                        for (let z = -scanRadius; z <= scanRadius; z++) {
-                            const blockPos = new BlockPos(playerBlockPos.getX() + x, playerBlockPos.getY() + y, playerBlockPos.getZ() + z);
-                            const blockState = mc.world.getBlockState(blockPos);
-
-                            if (blockState && !blockState.isAir()) {
-                                const blockBoxes = blockState.getCollisionShape(mc.world as unknown as BlockView, blockPos).getBoundingBoxes();
-                                for (const blockBox of blockBoxes) {
-                                    const relativePos = {
-                                        x: blockPos.getX() - mc.player.getX(),
-                                        y: blockPos.getY() - mc.player.getY(),
-                                        z: blockPos.getZ() - mc.player.getZ()
-                                    };
-
-                                    fixedRadiusScan.push({
-                                        bounding_box_coordinates: toBoundingBoxCoordinates(blockBox),
-                                        relative_position: relativePos,
-                                        box_dimensions: calculateBoxDimensions(blockBox),
-                                        element_identifier: blockState.getBlock().getName().getString(),
-                                        area_source_type: 'FIXED_RADIUS'
-                                    });
-                                }
-                            }
+                const startScan = new BlockPos(playerBlockPos.getX() - scanRadius, playerBlockPos.getY() - scanRadius, playerBlockPos.getZ() - scanRadius);
+                const endScan = new BlockPos(playerBlockPos.getX() + scanRadius, playerBlockPos.getY() + scanRadius, playerBlockPos.getZ() + scanRadius);
+                for (const blockPos of BlockPos.iterate(startScan, endScan)) {
+                    const blockState = mc.world.getBlockState(blockPos);
+    
+                    if (blockState && !blockState.isAir()) {
+                        const blockBoxes = blockState.getCollisionShape(mc.world as unknown as BlockView, blockPos).getBoundingBoxes();
+                        for (const blockBox of blockBoxes) {
+                            const relativePos = {
+                                x: blockPos.getX() - mc.player.getX(),
+                                y: blockPos.getY() - mc.player.getY(),
+                                z: blockPos.getZ() - mc.player.getZ()
+                            };
+    
+                            fixedRadiusScan.push({
+                                bounding_box_coordinates: toBoundingBoxCoordinates(blockBox),
+                                relative_position: relativePos,
+                                box_dimensions: calculateBoxDimensions(blockBox),
+                                element_identifier: blockState.getBlock().getName().getString(),
+                                area_source_type: 'FIXED_RADIUS'
+                            });
                         }
                     }
                 }
@@ -525,16 +536,15 @@ script.registerModule({
                     const upwardExpand = 2;
  
                     for (const pathBlock of pathPositions) {
-                        for (let x = -horizontalExpand; x <= horizontalExpand; x++) {
-                            for (let y = -downwardExpand; y <= upwardExpand; y++) {
-                                for (let z = -horizontalExpand; z <= horizontalExpand; z++) {
-                                    const blockPos = new BlockPos(pathBlock.getX() + x, pathBlock.getY() + y, pathBlock.getZ() + z);
-                                    if (dynamicInterestBlockSet.contains(blockPos))
-                                        continue;
-                                    else
-                                        dynamicInterestBlockSet.add(blockPos);
-                                }
-                            }
+                        const start = new BlockPos(pathBlock.getX() - horizontalExpand, pathBlock.getY() - downwardExpand, pathBlock.getZ() - horizontalExpand);
+                        const end = new BlockPos(pathBlock.getX() + horizontalExpand, pathBlock.getY() + upwardExpand, pathBlock.getZ() + horizontalExpand);
+                        for (const blockPos of BlockPos.iterate(start, end)) {
+                            // BlockPos.iterate typically reuses a mutable BlockPos instance for performance.
+                            // Create a fresh immutable BlockPos copy before storing/checking in the HashSet so
+                            // we don't insert a repeatedly-mutated object (which breaks set semantics).
+                            const blockCopy = new BlockPos(blockPos.getX(), blockPos.getY(), blockPos.getZ());
+                            if (dynamicInterestBlockSet.contains(blockCopy)) continue;
+                            dynamicInterestBlockSet.add(blockCopy);
                         }
                     }
                 }

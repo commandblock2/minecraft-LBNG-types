@@ -11,6 +11,8 @@ import { LiquidBounce } from "jvm-types/net/ccbluex/liquidbounce/LiquidBounce";
 
 
 let shouldReenable = false;
+let reenableThreadStop = false;
+let reenableThread: Thread | null = null;
 
 const script = registerScript.apply({
     name: "verb-scenario-generator",
@@ -31,7 +33,7 @@ script.registerModule({
         maxLength: Setting.int({
             name: "MaxVerbSequenceLength",
             default: 12,
-            range: [4, 20]
+            range: [4, 40]
         }),
         clearRadius: Setting.int({
             name: "ClearRadius",
@@ -125,11 +127,11 @@ script.registerModule({
             let r = Math.random() * total;
             for (const k of items) {
                 r -= probs[k];
-                if (r <= 0) { 
+                if (r <= 0) {
                     const verb = VerbType[k as unknown as keyof typeof VerbType];
                     if (verb == VerbType.GAP && verb == prev)
                         return VerbType.WALK;
-                    else 
+                    else
                         return verb;
                 };
             }
@@ -140,7 +142,7 @@ script.registerModule({
         const firstWalkLen = 1 + Math.floor(Math.random() * Math.min(3, maxLen));
         seq.push({ type: VerbType.WALK, arg: firstWalkLen });
         let remaining = maxLen - 1;
-
+ 
         let prevVerb = VerbType.GAP;
     
         while (remaining > 0) {
@@ -211,7 +213,25 @@ script.registerModule({
             }
         }
     
-        return seq;
+        // Ensure there is always at least one WALK between two non-WALK verbs.
+        // This post-process walks the sequence and inserts a WALK{1} whenever two adjacent verbs are both non-WALK.
+        function ensureWalkBetweenNonWalks(original: Verb[]): Verb[] {
+            const out: Verb[] = [];
+            for (let i = 0; i < original.length; i++) {
+                out.push(original[i]);
+                if (i + 1 < original.length) {
+                    const curr = original[i];
+                    const next = original[i + 1];
+                    if (curr.type !== VerbType.WALK && next.type !== VerbType.WALK) {
+                        // insert a short WALK to separate them
+                        out.push({ type: VerbType.WALK, arg: 1 });
+                    }
+                }
+            }
+            return out;
+        }
+    
+        return ensureWalkBetweenNonWalks(seq);
     }
     
     // Helper: step for diagonal direction
@@ -409,18 +429,20 @@ function validateAndFixPath(serverWorld: ServerWorld, pathPositions: BlockPos[],
                     const dy = p.getY() - prev.getY();
                     // if step up is greater than 1 block, fill vertical intermediate blocks
                     if (dy > 1) {
-                        for (let y = prev.getY() + 1; y < p.getY(); y++) {
+                        const startFill = new BlockPos(p.getX(), prev.getY() + 1, p.getZ());
+                        const endFill = new BlockPos(p.getX(), p.getY() - 1, p.getZ());
+                        for (const fill of BlockPos.iterate(startFill, endFill)) {
                             try {
-                                const fill = new BlockPos(p.getX(), y, p.getZ());
                                 serverWorld.setBlockState(fill, pathBlockState);
                             } catch (e) { }
                         }
                     }
                     // if step down is large (fall), fill beneath previous position so descent is gradual
                     if (dy < -1) {
-                        for (let y = p.getY(); y < prev.getY() - 1; y++) {
+                        const startFill = new BlockPos(prev.getX(), p.getY(), prev.getZ());
+                        const endFill = new BlockPos(prev.getX(), prev.getY() - 2, prev.getZ());
+                        for (const fill of BlockPos.iterate(startFill, endFill)) {
                             try {
-                                const fill = new BlockPos(prev.getX(), y, prev.getZ());
                                 serverWorld.setBlockState(fill, pathBlockState);
                             } catch (e) { }
                         }
@@ -465,25 +487,38 @@ function validateAndFixPath(serverWorld: ServerWorld, pathPositions: BlockPos[],
 
             const clearRadius = mod.settings.clearRadius.getValue();
             const air = Blocks.AIR.getDefaultState();
-            for (let dx = -clearRadius; dx <= clearRadius; dx++) {
-                for (let dy = -clearRadius; dy <= clearRadius; dy++) {
-                    for (let dz = -clearRadius; dz <= clearRadius; dz++) {
-                        const tx = startX + dx;
-                        const ty = startY + dy;
-                        const tz = startZ + dz;
-                        // preserve the player's foot block, the block below it and the block above it
-                        // to avoid clearing the player's standing block or causing them to fall.
-                        const foot = playerPos;
-                        const belowFoot = new BlockPos(foot.getX(), foot.getY() - 1, foot.getZ());
-                        const aboveFoot = new BlockPos(foot.getX(), foot.getY() + 1, foot.getZ());
-                        if ((tx === foot.getX() && ty === foot.getY() && tz === foot.getZ())
-                            || (tx === belowFoot.getX() && ty === belowFoot.getY() && tz === belowFoot.getZ())
-                            || (tx === aboveFoot.getX() && ty === aboveFoot.getY() && tz === aboveFoot.getZ())) continue;
-                        const p = new BlockPos(tx, ty, tz);
-                        serverWorld.setBlockState(p, air);
-                    }
-                }
+            const areaStart = new BlockPos(startX - clearRadius, startY - clearRadius, startZ - clearRadius);
+            const areaEnd = new BlockPos(startX + clearRadius, startY + clearRadius, startZ + clearRadius);
+            const foot = playerPos;
+            const belowFoot = new BlockPos(foot.getX(), foot.getY() - 1, foot.getZ());
+            const aboveFoot = new BlockPos(foot.getX(), foot.getY() + 1, foot.getZ());
+
+            // Enable player's flying capability and keep them flying (do not call sendAbilities here)
+            try {
+                mc.player.abilities.allowFlying = true;
+                mc.player.abilities.flying = true;
+            } catch (e) { }
+
+            // iterate over all positions in the cubic area
+            // NOTE: intentionally do NOT preserve the supporting block under the player.
+            // We only avoid clearing the player's occupied block to prevent immediate suffocation.
+            for (const p of BlockPos.iterate(areaStart, areaEnd)) {
+                try {
+                    serverWorld.setBlockState(p, air);
+                } catch (e) { }
             }
+
+            // Place a block under the player's foot while they are flying so they don't fall when flying is disabled
+            try {
+                const supportBlockState = (Blocks.OAK_PLANKS) ? Blocks.OAK_PLANKS.getDefaultState() : Blocks.STONE.getDefaultState();
+                serverWorld.setBlockState(belowFoot, supportBlockState);
+            } catch (e) { }
+
+            // Disable player's flying capability now that support block is placed (do not call sendAbilities)
+            try {
+                mc.player.abilities.allowFlying = false;
+                mc.player.abilities.flying = false;
+            } catch (e) { }
 
             const difficulty = mod.settings.difficulty.getValue();
             const maxLen = mod.settings.maxLength.getValue();
@@ -573,6 +608,8 @@ function validateAndFixPath(serverWorld: ServerWorld, pathPositions: BlockPos[],
                     mod.enabled = false;
                     baritoneMonitorActive = false;
                     shouldReenable = true;
+                    // debug: announce that we scheduled a re-enable
+                    try { Client.displayChatMessage("[VerbScenarioGenerator] scheduled re-enable (shouldReenable=true)"); } catch (e) { }
                 } catch (e) {
                     Client.displayChatMessage(`[VerbScenarioGenerator] Failed to auto-disable modules: ${e}`);
                 }
@@ -584,15 +621,53 @@ function validateAndFixPath(serverWorld: ServerWorld, pathPositions: BlockPos[],
 
     mod.on("disable", () => {
         Client.displayChatMessage("VerbScenarioGenerator disabled.");
+        // Keep the re-enable thread running so the module can re-enable itself when shouldReenable is set.
+        // Only disable baritone monitoring so gametick handler will stop checking Baritone.
+        baritoneMonitorActive = false;
     });
-
+    
     // @ts-expect-error
     UnsafeThread.run(() => {
-        while (true) {
-            while (!shouldReenable)
-                Thread.sleep(1000);
-            shouldReenable = false;
-            mod.enabled = true;
+        // store reference to current thread so disable handler can interrupt it
+        reenableThread = Thread.currentThread();
+        try {
+            while (!reenableThreadStop) {
+                try {
+                    // indicate we're sleeping/waiting for the signal
+                    try { Client.displayChatMessage("[VerbScenarioGenerator] reenable-thread waiting"); } catch (e) { }
+                } catch (e) { }
+                while (!shouldReenable && !reenableThreadStop) {
+                    Thread.sleep(1000);
+                }
+                if (reenableThreadStop) break;
+                // we observed the signal; log and attempt to re-enable
+                try { Client.displayChatMessage("[VerbScenarioGenerator] reenable-thread woke, attempting enable"); } catch (e) { }
+                shouldReenable = false;
+                // Ensure enabling the module runs on the main client thread
+                try {
+                    // prefer scheduling on the main thread
+                    if (typeof mc !== "undefined" && mc.execute) {
+                        mc.execute(() => {
+                            try {
+                                mod.enabled = true;
+                                try { Client.displayChatMessage("[VerbScenarioGenerator] module re-enabled (via mc.execute)"); } catch (e) { }
+                            } catch (e2) {
+                                try { Client.displayChatMessage("[VerbScenarioGenerator] failed to enable module in mc.execute: " + e2); } catch (e3) { }
+                            }
+                        });
+                    } else {
+                        // Fallback: directly toggle the module
+                        mod.enabled = true;
+                        try { Client.displayChatMessage("[VerbScenarioGenerator] module re-enabled (direct)"); } catch (e) { }
+                    }
+                } catch (e) {
+                    try { Client.displayChatMessage("[VerbScenarioGenerator] reenable-thread failed to enable module: " + e); } catch (e2) { }
+                }
+            }
+        } catch (e) {
+            // thread interrupted or other error - exit gracefully
+        } finally {
+            reenableThread = null;
         }
     })
 });
