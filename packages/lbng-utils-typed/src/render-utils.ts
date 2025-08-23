@@ -19,6 +19,7 @@ import { RenderSystem } from "jvm-types/com/mojang/blaze3d/systems/RenderSystem"
 import { Vector3f } from "jvm-types/org/joml/Vector3f"
 import { Matrix4f } from "jvm-types/org/joml/Matrix4f"
 import { MinecraftVectorExtensionsKt } from "jvm-types/net/ccbluex/liquidbounce/utils/math/MinecraftVectorExtensionsKt"
+import { WorldToScreen } from "jvm-types/net/ccbluex/liquidbounce/utils/render/WorldToScreen"
 
 export function renderBoxes(
     boxesWithPosition: Array<[Box, Vec3d]>,
@@ -135,12 +136,22 @@ export function drawLineStripFromVec3d(matrixStack: MatrixStack, positions: Arra
 const cacheMatrix = new Matrix4f()
 const cacheVec3f = new Vector3f()
 
+// @ts-expect-error
+const WorldToScreenClass = WorldToScreen.class;
+
+const projectionMatrixField = WorldToScreenClass.getDeclaredField('projectionMatrix')
+projectionMatrixField.setAccessible(true)
+
+const positionMatrixField = WorldToScreenClass.getDeclaredField('mvMatrix')
+positionMatrixField.setAccessible(true)
+
 export function calculateScreenPosExtended(
-    positionMatrix: Matrix4f,
-    projectionMatrix: Matrix4f,
     pos: Vec3d,
     cameraPos: Vec3d = mc.gameRenderer.camera.pos) {
     const relativePos = pos.subtract(cameraPos)
+
+    const projectionMatrix = projectionMatrixField.get(WorldToScreen.INSTANCE);
+    const positionMatrix = positionMatrixField.get(WorldToScreen.INSTANCE);
 
     const transformedPos = cacheVec3f.set(relativePos.getX(), relativePos.getY(), relativePos.getZ())
         .mulProject(cacheMatrix.set(projectionMatrix).mul(positionMatrix))
@@ -154,5 +165,13 @@ export function calculateScreenPosExtended(
             Primitives.float(guiScaleMul * mc.framebuffer.viewportHeight),
             1.0)
 
-    return new Vec3(screenPos.x, screenPos.y, transformedPos.z)
+    const pitch = mc.gameRenderer.camera.getPitch();
+    const yaw = mc.gameRenderer.camera.getYaw();
+
+    const lookX = -Math.sin(yaw * Math.PI / 180) * Math.cos(pitch * Math.PI / 180);
+    const lookY = -Math.sin(pitch * Math.PI / 180);
+    const lookZ = Math.cos(yaw * Math.PI / 180) * Math.cos(pitch * Math.PI / 180);
+    const cameraLookVec = new Vec3d(lookX, lookY, lookZ);
+
+    return cameraLookVec.dotProduct(relativePos) > 0 ? new Vec3(screenPos.x, screenPos.y, transformedPos.z) : null
 }

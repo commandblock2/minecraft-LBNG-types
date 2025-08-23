@@ -1,7 +1,7 @@
 import { Box } from "jvm-types/net/minecraft/util/math/Box";
 import { Vec3d } from "jvm-types/net/minecraft/util/math/Vec3d";
 import { Color4b } from "jvm-types/net/ccbluex/liquidbounce/render/engine/type/Color4b";
-import { drawTextWithBackground, renderBoxes, drawLineStripFromVec3d } from "./render-utils";
+import { drawTextWithBackground, renderBoxes, drawLineStripFromVec3d, calculateScreenPosExtended } from "./render-utils";
 import { RenderShortcutsKt } from "jvm-types/net/ccbluex/liquidbounce/render/RenderShortcutsKt";
 import { ScriptModule } from "jvm-types/net/ccbluex/liquidbounce/script/bindings/features/ScriptModule";
 import { EventManager } from "jvm-types/net/ccbluex/liquidbounce/event/EventManager";
@@ -264,7 +264,7 @@ export class VisualizationManager {
 
 
                                 return [
-                                    WorldToScreen.INSTANCE.calculateScreenPos(textRenderPos, cameraPos),
+                                    calculateScreenPosExtended(textRenderPos, cameraPos),
                                     lines,
                                     viz.textData.colorInterpolator(progress)
                                 ] as [Vec3 | null, string[], Color4b];
